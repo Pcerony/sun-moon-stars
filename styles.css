@@ -1,0 +1,71 @@
+:root {
+  color: #1e1e1e;
+  background: #f7f7f5;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.45;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 320px; }
+
+button, select {
+  min-height: 48px;
+  border: 2px solid #1e1e1e;
+  border-radius: 4px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+}
+
+button { cursor: pointer; padding: 10px 14px; }
+button:active { background: #1e1e1e; color: #fff; }
+button.secondary { border-style: dashed; background: transparent; }
+
+.app-shell { width: min(100%, 460px); min-height: 100dvh; margin: 0 auto; padding: 22px 18px 40px; }
+.app-header { display: flex; align-items: start; gap: 10px; border-bottom: 2px solid #1e1e1e; margin-bottom: 24px; }
+.app-header > div { margin-right: auto; }
+.app-header p, .eyebrow { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.app-header h1 { margin: 4px 0 14px; font-size: 28px; line-height: 1.1; }
+.language-control select { min-height: 36px; width: 56px; padding: 4px; }
+.home-button { width: 38px; min-height: 36px; padding: 0; font-size: 23px; line-height: 1; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.screen { display: grid; gap: 16px; }
+.screen h2 { margin: 0; font-size: 25px; line-height: 1.2; }
+.screen p { margin: 0; }
+.card { border: 2px solid #1e1e1e; border-radius: 4px; padding: 18px; background: #fff; }
+.card h3 { margin: 0 0 8px; font-size: 17px; }
+.actions { display: grid; gap: 10px; }
+.notice { border: 2px solid #1e1e1e; margin-bottom: 16px; padding: 12px; background: #fff8d7; font-weight: 700; }
+.status { font-weight: 700; }
+.demo-control { border-top: 1px dashed #555; margin-top: 12px; padding-top: 16px; }
+.demo-control details, .screen details { margin-top: 14px; }
+.demo-control summary, .screen summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.demo-control details button, .screen details button { margin-top: 10px; }
+.demo-control label { display: grid; gap: 8px; font-size: 13px; font-weight: 700; }
+.score { font-size: 42px; font-weight: 700; line-height: 1; }
+.star-list, .team-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.star-list li, .team-list li { border: 1px solid #1e1e1e; padding: 10px; background: #fff; }
+.sky { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.sky span { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #1e1e1e; background: #fff; font-size: 22px; }
+.sky span.collected { background: #1e1e1e; color: #fff; }
+.detector-screen { text-align: center; }
+.detector { position: relative; display: grid; place-items: center; min-height: 250px; overflow: hidden; border: 2px solid #1e1e1e; border-radius: 50%; background: #fff; }
+.detector strong { position: relative; z-index: 2; max-width: 160px; font-size: 18px; }
+.signal-rings { position: absolute; inset: 0; display: grid; place-items: center; }
+.signal-rings i { position: absolute; width: 38%; aspect-ratio: 1; border: 2px solid #1e1e1e; border-radius: 50%; opacity: var(--signal); }
+.signal-rings i:nth-child(2) { width: 62%; opacity: var(--signal); }
+.signal-rings i:nth-child(3) { width: 86%; opacity: var(--signal); }
+.compass-arrow { position: absolute; top: 24px; font-size: 34px; transform: rotate(var(--rotation)); transform-origin: 50% 103px; transition: transform .2s ease; }
+.park-map { position: relative; min-height: 520px; overflow: hidden; border: 2px solid #1e1e1e; background: #fff; }
+.lake { position: absolute; top: 15%; left: 17%; display: grid; place-items: center; width: 66%; aspect-ratio: 1.45; border: 2px solid #1e1e1e; border-radius: 50%; font-weight: 700; }
+.map-path { position: absolute; height: 2px; background: #1e1e1e; transform-origin: left center; }
+.path-one { top: 42%; left: 7%; width: 85%; transform: rotate(22deg); }
+.path-two { top: 70%; left: 14%; width: 70%; transform: rotate(-35deg); }
+.map-marker, .map-you { position: absolute; display: grid; gap: 2px; place-items: center; font-weight: 700; text-align: center; }
+.map-marker { font-size: 30px; }
+.map-marker span, .map-you span { max-width: 92px; font-size: 12px; line-height: 1.15; }
+.marker-dog { right: 9%; top: 18%; }
+.marker-flowers { left: 7%; bottom: 13%; }
+.map-you { right: 12%; bottom: 18%; font-size: 26px; }
