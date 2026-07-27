@@ -68,6 +68,9 @@ function showNotice(message) { notice.textContent = message; notice.hidden = fal
 function clearNotice() { notice.hidden = true; notice.textContent = ''; }
 function activeOrSelectedTask() { return TASKS[state.activeTaskId || state.selectedTaskId]; }
 function devOnly(markup) { return state.devMode ? `<details class="demo-panel" open><summary>${words().demoTools}</summary>${markup}</details>` : ''; }
+function logoMarkup(className = '') {
+  return `<img class="brand-logo ${className}" src="./assets/branding/logo.png" alt="">`;
+}
 function taskOptions() {
   return Object.values(TASKS).map(task => `<option value="${task.id}" ${task.id === state.selectedTaskId ? 'selected' : ''}>${taskTitle(task)}</option>`).join('');
 }
@@ -75,7 +78,7 @@ function taskOptions() {
 function dockMarkup(active) {
   const t = words();
   return `<nav class="bottom-dock" aria-label="${t.title}">
-    <button class="dock-button ${active === 'home' ? 'active' : ''}" data-action="home" aria-label="${t.nearby}" title="${t.nearby}">${icon('home')}</button>
+    <button class="dock-button dock-home ${active === 'home' ? 'active' : ''}" data-action="home" aria-label="${t.nearby}" title="${t.nearby}">${logoMarkup('dock-logo')}</button>
     <button class="dock-button ${active === 'sky' ? 'active' : ''}" data-action="sky" aria-label="${t.sky}" title="${t.sky}">${icon('star')}</button>
     <button class="dock-button ${active === 'map' ? 'active' : ''}" data-action="view-map" aria-label="${t.parkMap}" title="${t.parkMap}">${icon('map')}</button>
   </nav>`;
@@ -161,6 +164,7 @@ async function startDetector() {
 function welcomeMarkup() {
   const t = words();
   return `<section class="screen welcome-screen"><div class="content">
+    ${logoMarkup('welcome-logo')}
     <p class="eyebrow">${t.activity}</p>
     <h2>${t.hello}</h2>
     <div class="image-sticker welcome-image"><img src="./assets/illustrations/welcome-pair.png" alt=""></div>

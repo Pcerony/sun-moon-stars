@@ -93,12 +93,12 @@ button:focus-visible, select:focus-visible, input:focus-visible {
   place-items: center;
   border: 2px solid rgba(53, 84, 90, .28);
   border-radius: 48% 52% 44% 56%;
-  background: var(--yellow);
-  color: #fff;
-  font-family: "Nunito", sans-serif;
-  font-size: 18px;
+  background: rgba(255, 253, 244, .8);
   transform: rotate(-6deg);
 }
+.brand-mark img { width: 25px; height: 25px; object-fit: contain; }
+.brand-logo { display: block; object-fit: contain; }
+.welcome-logo { width: 62px; height: 62px; margin: 0 auto -5px; }
 
 .app-shell[data-screen="sky"] .brand-lockup { color: #f7fff8; }
 
@@ -424,6 +424,8 @@ h3 { font-size: 19px; line-height: 1.2; }
   font-size: 26px;
 }
 .dock-button.active { transform: translateY(-13px); background: var(--yellow); color: var(--ink); box-shadow: 0 3px 0 rgba(53, 84, 90, .18); }
+.dock-logo { width: 31px; height: 31px; filter: brightness(0) invert(1); }
+.dock-home.active .dock-logo { filter: none; }
 
 .paper-prompt {
   display: grid;
