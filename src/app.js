@@ -30,7 +30,8 @@ const TEXT = {
     paperMap: "Moon's paper map", followMoon: 'Follow the Moon', mapHint: 'Find this place together.',
     scanToStart: 'Scan Moon', currentStar: 'Star task', detector: 'Find Star', scanStar: 'Scan Star',
     scanStarHint: 'Hold the Star badge near the phone.',
-    signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!',
+    signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!', signalReady: 'Ready',
+    sensorFallback: 'Compass unavailable. Scan the Star directly.',
     sky: 'Our sky', parkMap: 'Backup map',
     community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
     demoLocation: 'Task', testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
@@ -47,7 +48,8 @@ const TEXT = {
     paperMap: '月亮的纸地图', followMoon: '跟着月亮', mapHint: '一起找到这个地方。',
     scanToStart: '扫描月亮', currentStar: '星星任务', detector: '寻找星星', scanStar: '扫描星星',
     scanStarHint: '把星星勋章贴近手机。',
-    signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！',
+    signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！', signalReady: '可以扫描',
+    sensorFallback: '方向感应不可用，请直接扫描星星。',
     sky: '我们的星空', parkMap: '备用地图',
     community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
     demoLocation: '任务', testHeading: '测试方向', scanningMoon: '正在感应月亮…',
@@ -66,6 +68,7 @@ let manualHeading = null;
 let lastPulse = 0;
 let detectorReadiness = createReadiness();
 let detectorReadyTimer = null;
+let detectorFallbackTimer = null;
 let orientationListening = false;
 let audioContext = null;
 let renderedScreen = null;
@@ -116,6 +119,7 @@ function currentSignalStrength() {
 }
 function signalMessage(strength) {
   const t = words();
+  if (detectorReadiness.ready && !detectorListening) return t.signalReady;
   if (!detectorListening) return t.signalNone;
   if (strength > 0.88) return t.signalFound;
   if (strength > 0.62) return t.signalNear;
@@ -132,6 +136,12 @@ function pulse(strength) {
 function clearDetectorReadyTimer() {
   window.clearTimeout(detectorReadyTimer);
   detectorReadyTimer = null;
+}
+function enableDetectorFallback(message) {
+  detectorListening = false;
+  detectorReadiness = { nearSince: null, ready: true };
+  showNotice(message);
+  render();
 }
 function updateDetectorSignal(now = Date.now()) {
   const strength = currentSignalStrength();
@@ -247,6 +257,8 @@ function stopDetector() {
   detectorStartHeading = null;
   detectorReadiness = createReadiness();
   clearDetectorReadyTimer();
+  window.clearTimeout(detectorFallbackTimer);
+  detectorFallbackTimer = null;
   lastPulse = 0;
   if (navigator.vibrate) navigator.vibrate(0);
 }
@@ -272,9 +284,14 @@ async function startDetector() {
         render();
       }, { passive: true });
     }
+    detectorFallbackTimer = window.setTimeout(() => {
+      detectorFallbackTimer = null;
+      if (state.screen === 'detector' && detectorHeading === null && manualHeading === null) {
+        enableDetectorFallback(words().sensorFallback);
+      }
+    }, 2500);
   } catch (error) {
-    detectorListening = false;
-    showNotice(error.message);
+    enableDetectorFallback(words().sensorFallback);
   }
   render();
 }
