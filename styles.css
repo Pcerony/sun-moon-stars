@@ -270,6 +270,257 @@ h3 { font-size: 19px; line-height: 1.2; }
   transform: rotate(-4deg);
 }
 
+.ritual-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0 auto 0 50%;
+  width: min(100%, 460px);
+  min-height: 100dvh;
+  transform: translateX(-50%);
+  overflow: hidden;
+  background-color: var(--cream);
+  background-image:
+    linear-gradient(rgba(81, 150, 133, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(81, 150, 133, .07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.ritual-stage { position: relative; width: 100%; height: 100dvh; min-height: 620px; }
+.ritual-asset { position: absolute; display: block; object-fit: contain; }
+.ritual-waves { position: absolute; z-index: 2; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.ritual-waves i {
+  position: absolute;
+  width: 100px;
+  aspect-ratio: 1;
+  border: 4px solid var(--teal);
+  border-radius: 50%;
+  opacity: 0;
+}
+.ritual-reader {
+  position: absolute;
+  z-index: 3;
+  top: 47%;
+  left: 50%;
+  display: grid;
+  width: 106px;
+  aspect-ratio: 1;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 3px dashed rgba(74, 165, 162, .48);
+  border-radius: 50%;
+  background: rgba(255, 253, 244, .88);
+  color: var(--teal-dark);
+  font-size: 46px;
+}
+.ritual-scanning strong {
+  position: absolute;
+  z-index: 4;
+  top: calc(47% + 82px);
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.ritual-scanning .ritual-waves i { animation: ritual-scan-wave 1.8s ease-out infinite; }
+.ritual-scanning .ritual-waves i:nth-child(2) { animation-delay: .6s; }
+.ritual-scanning .ritual-waves i:nth-child(3) { animation-delay: 1.2s; }
+
+.ritual-pair .ritual-waves,
+.ritual-star .ritual-waves { top: 7%; }
+.ritual-pair .ritual-waves i,
+.ritual-star .ritual-waves i { animation: ritual-success-wave 1.15s ease-out forwards; }
+.ritual-pair .ritual-waves i:nth-child(2),
+.ritual-star .ritual-waves i:nth-child(2) { animation-delay: .15s; }
+.ritual-pair .ritual-waves i:nth-child(3),
+.ritual-star .ritual-waves i:nth-child(3) { animation-delay: .3s; }
+
+.ritual-pair .ritual-sun,
+.ritual-pair .ritual-moon {
+  z-index: 5;
+  top: 37%;
+  width: 142px;
+  opacity: 0;
+  filter: drop-shadow(0 4px 0 rgba(53, 84, 90, .12));
+}
+.ritual-pair .ritual-sun { left: -110px; animation: ritual-sun-meet 1.25s cubic-bezier(.2, .85, .2, 1) .7s forwards; }
+.ritual-pair .ritual-moon { right: -110px; animation: ritual-moon-meet 1.25s cubic-bezier(.2, .85, .2, 1) .7s forwards; }
+.ritual-connection {
+  position: absolute;
+  z-index: 6;
+  top: 48%;
+  left: 50%;
+  width: 18px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) scale(.2);
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 0 0 rgba(238, 135, 118, .35);
+  opacity: 0;
+  animation: ritual-connect .65s ease 1.65s forwards;
+}
+.ritual-partner-sticker {
+  position: absolute;
+  z-index: 8;
+  top: 45%;
+  left: 50%;
+  width: min(70vw, 270px);
+  aspect-ratio: 1.28;
+  transform: translate(-50%, -50%) scale(.2) rotate(-8deg);
+  overflow: hidden;
+  border: 7px solid var(--white);
+  border-radius: 47% 53% 45% 55% / 52% 45% 55% 48%;
+  outline: 2px solid rgba(53, 84, 90, .16);
+  background: var(--sky);
+  opacity: 0;
+  animation: ritual-sticker-reveal .78s cubic-bezier(.18, 1.42, .35, 1) 2.05s forwards;
+}
+.ritual-partner-sticker .ritual-asset {
+  top: 19%;
+  width: 54%;
+  filter: drop-shadow(0 3px 0 rgba(53, 84, 90, .1));
+}
+.ritual-sticker-sun { left: 4%; transform: rotate(-7deg); }
+.ritual-sticker-moon { right: 3%; transform: rotate(7deg); }
+
+.ritual-sparks i {
+  position: absolute;
+  z-index: 10;
+  color: var(--coral);
+  font-style: normal;
+  font-size: 28px;
+  opacity: 0;
+  animation: ritual-spark .65s ease 2.3s forwards;
+}
+.ritual-sparks i:nth-child(1) { left: 18%; top: 25%; }
+.ritual-sparks i:nth-child(2) { right: 17%; top: 34%; animation-delay: 2.4s; }
+.ritual-sparks i:nth-child(3) { left: 26%; top: 64%; color: var(--yellow); animation-delay: 2.5s; }
+.ritual-sparks i:nth-child(4) { right: 25%; top: 62%; color: var(--teal); animation-delay: 2.45s; }
+
+.ritual-result {
+  position: absolute;
+  z-index: 12;
+  left: 20px;
+  right: 20px;
+  bottom: max(72px, calc(48px + env(safe-area-inset-bottom)));
+  text-align: center;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: ritual-result-in .45s ease 2.72s forwards;
+}
+.ritual-result strong { display: block; font-size: 27px; }
+.ritual-result small { display: block; margin-top: 5px; color: var(--teal-dark); font-size: 14px; }
+
+.ritual-star .ritual-sky {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 48%;
+  transform: scaleY(.08);
+  transform-origin: top;
+  overflow: hidden;
+  border-radius: 0 0 52% 10% / 0 0 13% 6%;
+  background: #477f8a;
+  color: #fff;
+  opacity: 0;
+  animation: ritual-sky-open .6s ease 2.05s forwards;
+}
+.ritual-sky > strong { position: absolute; top: max(24px, env(safe-area-inset-top)); left: 20px; font-size: 18px; }
+.ritual-sky > i { position: absolute; color: rgba(255,255,255,.42); font-style: normal; font-size: 24px; }
+.ritual-sky > i:nth-of-type(1) { left: 12%; top: 33%; }
+.ritual-sky > i:nth-of-type(2) { right: 13%; top: 24%; }
+.ritual-sky > i:nth-of-type(3) { right: 24%; bottom: 16%; }
+.ritual-star-collected {
+  z-index: 2;
+  top: 22%;
+  left: 50%;
+  width: 132px;
+  transform: translate(-50%, -50%) scale(.2) rotate(-16deg);
+  opacity: 0;
+  animation: ritual-collected-pop .6s cubic-bezier(.2, 1.4, .4, 1) 3.02s forwards;
+}
+.ritual-star .ritual-new-star {
+  z-index: 9;
+  top: 47%;
+  left: 50%;
+  width: 152px;
+  transform: translate(-50%, -50%) scale(.2) rotate(-20deg);
+  opacity: 0;
+  filter: drop-shadow(0 4px 0 rgba(53, 84, 90, .13));
+  animation:
+    ritual-star-arrive 1.05s cubic-bezier(.18, 1.35, .35, 1) .55s forwards,
+    ritual-star-to-sky .9s cubic-bezier(.4, 0, .2, 1) 2.35s forwards;
+}
+.ritual-partners {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 18%;
+  width: 330px;
+  height: 145px;
+  transform: translateX(-50%);
+}
+.ritual-partners .ritual-asset { top: 0; width: 142px; filter: drop-shadow(0 4px 0 rgba(53, 84, 90, .12)); }
+.ritual-partners .ritual-sun { left: 0; animation: ritual-catch-sun 1s ease 1.08s forwards; }
+.ritual-partners .ritual-moon { right: 0; animation: ritual-catch-moon 1s ease 1.08s forwards; }
+.ritual-star .ritual-result { animation-delay: 3.25s; }
+.ritual-star .ritual-result small { color: var(--teal-dark); }
+
+@keyframes ritual-scan-wave {
+  0% { opacity: .55; transform: scale(.4); }
+  100% { opacity: 0; transform: scale(3.1); }
+}
+@keyframes ritual-success-wave {
+  0% { opacity: .6; transform: scale(.35); }
+  100% { opacity: 0; transform: scale(3.4); }
+}
+@keyframes ritual-sun-meet {
+  0% { left: -110px; opacity: 0; transform: rotate(-22deg); }
+  60% { left: 22%; opacity: 1; transform: translateX(-50%) rotate(7deg); }
+  80% { left: 39%; opacity: 1; transform: translateX(-50%) rotate(-3deg); }
+  100% { left: 43%; opacity: 0; transform: translateX(-50%) scale(.65); }
+}
+@keyframes ritual-moon-meet {
+  0% { right: -110px; opacity: 0; transform: rotate(22deg); }
+  60% { right: 22%; opacity: 1; transform: translateX(50%) rotate(-7deg); }
+  80% { right: 39%; opacity: 1; transform: translateX(50%) rotate(3deg); }
+  100% { right: 43%; opacity: 0; transform: translateX(50%) scale(.65); }
+}
+@keyframes ritual-connect {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 0 20px rgba(238, 135, 118, .2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(.7); box-shadow: 0 0 0 38px rgba(238, 135, 118, 0); }
+}
+@keyframes ritual-sticker-reveal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(-8deg); }
+  72% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(3deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
+}
+@keyframes ritual-spark {
+  0% { opacity: 0; transform: scale(.2) rotate(0); }
+  65% { opacity: 1; transform: scale(1.25) rotate(18deg); }
+  100% { opacity: .78; transform: scale(1) rotate(8deg); }
+}
+@keyframes ritual-result-in { to { opacity: 1; transform: none; } }
+@keyframes ritual-sky-open { to { opacity: 1; transform: scaleY(1); } }
+@keyframes ritual-star-arrive {
+  0% { opacity: 0; transform: translate(-50%, -75%) scale(.2) rotate(-20deg); }
+  72% { opacity: 1; transform: translate(-50%, -50%) scale(1.16) rotate(8deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes ritual-catch-sun { 65% { left: 53px; transform: translateY(-12px) rotate(5deg); } 100% { left: 42px; transform: none; } }
+@keyframes ritual-catch-moon { 65% { right: 53px; transform: translateY(-12px) rotate(-5deg); } 100% { right: 42px; transform: none; } }
+@keyframes ritual-star-to-sky {
+  0% { top: 47%; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  75% { top: 22%; opacity: 1; transform: translate(-50%, -50%) scale(.55) rotate(24deg); }
+  100% { top: 22%; opacity: 0; transform: translate(-50%, -50%) scale(.22); }
+}
+@keyframes ritual-collected-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(-16deg); }
+  75% { opacity: 1; transform: translate(-50%, -50%) scale(1.16) rotate(7deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
 .profile-name {
   display: flex;
   align-items: center;
@@ -582,4 +833,10 @@ h3 { font-size: 19px; line-height: 1.2; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  .ritual-overlay *,
+  .ritual-overlay *::before,
+  .ritual-overlay *::after {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+  }
 }

@@ -6,6 +6,12 @@ import {
   showSky, startActivity, toggleDevMode
 } from './state.js';
 import { canScanNfc, scanTag } from './nfc.js';
+import {
+  beginRitual,
+  failRitual,
+  finishRitual,
+  succeedRitual
+} from './ritual.js';
 
 const TEXT = {
   en: {
@@ -21,7 +27,9 @@ const TEXT = {
     signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!',
     collected: 'Star collected', sky: 'Our sky', continue: 'Continue', parkMap: 'Backup map',
     community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
-    demoLocation: 'Task', testHeading: 'Heading'
+    demoLocation: 'Task', testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
+    scanningStar: 'Listening for a Star…', pairSuccess: 'Partners!', together: 'Let’s go together',
+    starSuccess: 'Star collected!', intoSky: 'Added to our sky'
   },
   zh: {
     activity: '大濠公园', title: '太阳与月亮', unavailable: 'NFC 需要使用支持 NFC 的 Android Chrome 手机。',
@@ -36,7 +44,9 @@ const TEXT = {
     signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！',
     collected: '收集成功', sky: '我们的星空', continue: '继续探索', parkMap: '备用地图',
     community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
-    demoLocation: '任务', testHeading: '测试方向'
+    demoLocation: '任务', testHeading: '测试方向', scanningMoon: '正在感应月亮…',
+    scanningStar: '正在感应星星…', pairSuccess: '伙伴配对成功', together: '一起出发吧',
+    starSuccess: '共同收藏成功', intoSky: '已放入我们的星空'
   }
 };
 
@@ -51,6 +61,9 @@ let lastPulse = 0;
 let orientationListening = false;
 let audioContext = null;
 let renderedScreen = null;
+let ritual = null;
+let ritualTimer = null;
+let ritualToken = 0;
 const root = document.querySelector('#app');
 const notice = document.querySelector('#notice');
 const languageSelect = document.querySelector('#language-select');
@@ -70,6 +83,9 @@ function activeOrSelectedTask() { return TASKS[state.activeTaskId || state.selec
 function devOnly(markup) { return state.devMode ? `<details class="demo-panel" open><summary>${words().demoTools}</summary>${markup}</details>` : ''; }
 function logoMarkup(className = '') {
   return `<img class="brand-logo ${className}" src="./assets/branding/logo.png" alt="">`;
+}
+function ritualAsset(name, className = '') {
+  return `<img class="ritual-asset ${className}" src="./assets/ritual/${name}.png" alt="">`;
 }
 function taskOptions() {
   return Object.values(TASKS).map(task => `<option value="${task.id}" ${task.id === state.selectedTaskId ? 'selected' : ''}>${taskTitle(task)}</option>`).join('');
@@ -125,6 +141,72 @@ function playSignalTone(strength) {
   oscillator.connect(gain).connect(audioContext.destination);
   oscillator.start();
   oscillator.stop(audioContext.currentTime + 0.13);
+}
+
+function playTone(frequency, delay = 0, duration = 0.18) {
+  if (!audioContext || audioContext.state !== 'running') return;
+  const startsAt = audioContext.currentTime + delay;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.value = frequency;
+  gain.gain.setValueAtTime(0.0001, startsAt);
+  gain.gain.exponentialRampToValueAtTime(0.055, startsAt + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + duration);
+  oscillator.connect(gain).connect(audioContext.destination);
+  oscillator.start(startsAt);
+  oscillator.stop(startsAt + duration + 0.02);
+}
+
+function playRitualFeedback(kind) {
+  prepareAudio();
+  if (kind === 'star') {
+    if (navigator.vibrate) navigator.vibrate([55, 70, 85]);
+    playTone(620, 0, 0.2);
+    playTone(880, 0.2, 0.24);
+    return;
+  }
+  if (navigator.vibrate) navigator.vibrate(75);
+  playTone(720, 0, 0.25);
+}
+
+function stopRitual() {
+  ritualToken += 1;
+  window.clearTimeout(ritualTimer);
+  ritualTimer = null;
+  ritual = null;
+  scanning = false;
+  if (navigator.vibrate) navigator.vibrate(0);
+}
+
+function applySuccessfulScan(kind) {
+  if (kind === 'pair') state = pairWithMoon(state, DEMO_MOON);
+  if (kind === 'moon') state = activateMoon(state);
+  if (kind === 'star') state = completeWithStar(state);
+}
+
+function showSuccessfulRitual(kind) {
+  const token = ++ritualToken;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  ritual = succeedRitual(beginRitual(kind), reducedMotion);
+  scanning = false;
+  clearNotice();
+  playRitualFeedback(kind);
+  render();
+  ritualTimer = window.setTimeout(() => {
+    if (token !== ritualToken) return;
+    ritual = finishRitual(ritual);
+    applySuccessfulScan(kind);
+    ritual = null;
+    ritualTimer = null;
+    render();
+  }, ritual.duration);
+}
+
+function performSimulatedScan(kind) {
+  if (scanning || ritual) return;
+  prepareAudio();
+  showSuccessfulRitual(kind);
 }
 function stopDetector() {
   detectorListening = false;
@@ -310,6 +392,56 @@ function skyMarkup() {
   </div>${dockMarkup('sky')}</section>`;
 }
 
+function ritualMarkup() {
+  if (!ritual || ritual.phase === 'error' || ritual.phase === 'complete') return '';
+  const t = words();
+  const isStar = ritual.kind === 'star';
+  if (ritual.phase === 'scanning') {
+    return `<section class="ritual-overlay ritual-scanning" role="status" aria-live="assertive">
+      <div class="ritual-stage">
+        <div class="ritual-waves" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="ritual-reader">${icon('nfc')}</div>
+        <strong>${isStar ? t.scanningStar : t.scanningMoon}</strong>
+      </div>
+    </section>`;
+  }
+
+  if (isStar) {
+    return `<section class="ritual-overlay ritual-star is-success" role="status" aria-live="assertive">
+      <div class="ritual-stage">
+        <div class="ritual-sky">
+          <strong>${t.sky}</strong>
+          <i>✦</i><i>✦</i><i>✦</i>
+          ${ritualAsset('star', 'ritual-star-collected')}
+        </div>
+        <div class="ritual-waves" aria-hidden="true"><i></i><i></i><i></i></div>
+        ${ritualAsset('star', 'ritual-new-star')}
+        <div class="ritual-partners">
+          ${ritualAsset('sun', 'ritual-sun')}
+          ${ritualAsset('moon', 'ritual-moon')}
+        </div>
+        <div class="ritual-sparks" aria-hidden="true"><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>
+        <div class="ritual-result"><strong>${t.starSuccess}</strong><small>${t.intoSky}</small></div>
+      </div>
+    </section>`;
+  }
+
+  return `<section class="ritual-overlay ritual-pair is-success" role="status" aria-live="assertive">
+    <div class="ritual-stage">
+      <div class="ritual-waves" aria-hidden="true"><i></i><i></i><i></i></div>
+      ${ritualAsset('sun', 'ritual-sun')}
+      ${ritualAsset('moon', 'ritual-moon')}
+      <i class="ritual-connection" aria-hidden="true"></i>
+      <div class="ritual-partner-sticker">
+        ${ritualAsset('sun', 'ritual-sticker-sun')}
+        ${ritualAsset('moon', 'ritual-sticker-moon')}
+      </div>
+      <div class="ritual-sparks" aria-hidden="true"><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>
+      <div class="ritual-result"><strong>${t.pairSuccess}</strong><small>${t.together}</small></div>
+    </div>
+  </section>`;
+}
+
 function render() {
   const t = words();
   const screenChanged = renderedScreen !== state.screen;
@@ -329,23 +461,26 @@ function render() {
     map: mapMarkup, 'map-view': mapViewMarkup, task: taskMarkup, detector: detectorMarkup,
     complete: completeMarkup, sky: skyMarkup
   };
-  root.innerHTML = screens[state.screen]();
+  root.innerHTML = screens[state.screen]() + ritualMarkup();
   if (screenChanged) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
 }
 
 async function performScan(kind) {
-  if (scanning) return;
+  if (scanning || ritual) return;
   scanning = true;
-  showNotice(kind === 'star' ? words().scanStarHint : words().scanMoonHint);
+  prepareAudio();
+  clearNotice();
+  ritual = beginRitual(kind);
+  render();
   try {
     await scanTag();
-    if (kind === 'pair') state = pairWithMoon(state, DEMO_MOON);
-    else state = kind === 'moon' ? activateMoon(state) : completeWithStar(state);
+    showSuccessfulRitual(kind);
   } catch (error) {
-    showNotice(error.message === 'NFC is not available in this browser. Use Android Chrome or the demo button.' ? words().nfcError : error.message);
-  } finally {
+    ritual = failRitual(ritual);
     scanning = false;
     render();
+    ritual = null;
+    showNotice(error.message === 'NFC is not available in this browser. Use Android Chrome or the demo button.' ? words().nfcError : error.message);
   }
 }
 
@@ -361,15 +496,15 @@ root.addEventListener('click', event => {
   if (action === 'detector') { stopDetector(); state = openDetector(state); }
   if (action === 'start-detector') startDetector();
   if (action === 'found-keeper') { stopDetector(); state = confirmStarKeeperFound(state); }
-  if (action === 'simulate-pair') state = pairWithMoon(state, DEMO_MOON);
+  if (action === 'simulate-pair') performSimulatedScan('pair');
   if (action === 'confirm-pair') state = confirmPair(state);
   if (action === 'nearby-task') state = openNearbyTask(state, control.dataset.taskId);
-  if (action === 'simulate-moon') state = activateMoon(state);
-  if (action === 'simulate-star') state = completeWithStar(state);
+  if (action === 'simulate-moon') performSimulatedScan('moon');
+  if (action === 'simulate-star') performSimulatedScan('star');
   if (action === 'view-map') state = openMapBackup(state);
   if (action === 'sky') state = showSky(state);
   if (action === 'home' || action === 'continue') state = action === 'home' ? goHome(state) : continueExploring(state);
-  if (action === 'reset') state = createInitialState();
+  if (action === 'reset') { stopRitual(); state = createInitialState(); }
   render();
 });
 
@@ -393,6 +528,7 @@ languageSelect.addEventListener('change', event => {
   render();
 });
 homeButton.addEventListener('click', () => {
+  stopRitual();
   stopDetector();
   state = goHome(state);
   clearNotice();
@@ -406,6 +542,7 @@ appTitle.addEventListener('pointerdown', () => {
   }, 1200);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => appTitle.addEventListener(type, () => clearTimeout(devPressTimer)));
+window.addEventListener('pagehide', stopRitual);
 
 if (!canScanNfc()) showNotice(words().unavailable);
 render();
