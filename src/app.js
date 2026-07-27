@@ -1,9 +1,9 @@
-import { COMMUNITY_TEAMS, MOCK_OUTDOOR_STATUS, TASKS } from './tasks.js';
+import { ALL_TASKS, COMMUNITY_TEAMS, MOCK_OUTDOOR_STATUS, REGIONS, getTasksForRegion } from './tasks.js';
 import { icon } from './icons.js';
 import {
   beginRegionScan, completeDetector, completeWithStar, confirmPair, createInitialState,
   goHome, openMapBackup, openNearbyTask, pairWithMoon, setLanguage,
-  showSky, startActivity, toggleDevMode, unlockRegion, unlockTask
+  setCurrentRegion, showSky, startActivity, toggleDevMode, unlockRegion, unlockTask
 } from './state.js';
 import {
   createReadiness,
@@ -31,7 +31,7 @@ const TEXT = {
     nearby: 'Nearby', lakeArea: 'Lakeside', updated: 'updated', temp: 'temperature', steps: 'steps', points: 'points',
     unlockArea: 'Unlock nearby tasks', unlockAreaHint: 'Explore this area together',
     regionScan: 'Scan this area', taskScan: 'Unlock task',
-    currentStar: 'Star task', detector: 'Find task', detectorNext: 'Next', scanStar: 'Collect Star',
+    currentStar: 'Star task', egg: 'Hidden egg', eggTask: 'Hidden egg', eggHint: 'Found it? Bring the Star badge near the phone.', detector: 'Find task', detectorNext: 'Next', scanStar: 'Collect Star',
     scanStarHint: 'Hold the Star badge near the phone.',
     signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!', signalReady: 'Ready',
     sensorFallback: 'Compass unavailable. Continue to the next step.',
@@ -51,7 +51,7 @@ const TEXT = {
     nearby: '附近任务', lakeArea: '湖畔区', updated: '刚刚更新', temp: '温度', steps: '步数', points: '积分',
     unlockArea: '一起解锁附近任务', unlockAreaHint: '探索这个小区域',
     regionScan: '扫描当前区域', taskScan: '解锁任务',
-    currentStar: '星星任务', detector: '寻找任务', detectorNext: '下一步', scanStar: '收获星星',
+    currentStar: '星星任务', egg: '隐藏彩蛋', eggTask: '寻找彩蛋', eggHint: '找到彩蛋后，把星星勋章贴近手机。', detector: '寻找任务', detectorNext: '下一步', scanStar: '收获星星',
     scanStarHint: '把星星勋章贴近手机。',
     signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！', signalReady: '可以扫描',
     sensorFallback: '方向感应不可用，请直接进入下一步。',
@@ -95,7 +95,10 @@ function taskInstruction(task) { return state.language === 'zh' ? task.instructi
 function taskArea(task) { return state.language === 'zh' ? task.areaZh : task.area; }
 function showNotice(message) { notice.textContent = message; notice.hidden = false; }
 function clearNotice() { notice.hidden = true; notice.textContent = ''; }
-function activeOrSelectedTask() { return TASKS[state.activeTaskId || state.selectedTaskId]; }
+function activeOrSelectedTask() { return ALL_TASKS[state.activeTaskId || state.selectedTaskId]; }
+function currentRegion() { return REGIONS[state.currentRegionId]; }
+function currentRegionIsUnlocked() { return state.unlockedRegionIds.includes(state.currentRegionId); }
+function taskLabel(task) { return task.kind === 'egg' ? words().eggTask : taskTitle(task); }
 function devOnly(markup) { return state.devMode ? `<details class="demo-panel" open><summary>${words().demoTools}</summary>${markup}</details>` : ''; }
 function logoMarkup(className = '') {
   return `<img class="brand-logo ${className}" src="./assets/branding/logo.png" alt="">`;
@@ -353,24 +356,27 @@ function introductionMarkup() {
 
 function homeMarkup() {
   const t = words();
-  const taskButtons = Object.values(TASKS).map(task => {
+  const regionTasks = getTasksForRegion(state.currentRegionId);
+  const taskButtons = regionTasks.map((task, index) => {
     const done = state.completedTaskIds.includes(task.id);
-    return `<button class="sticker-button task-${task.id}" data-action="nearby-task" data-task-id="${task.id}" ${done ? 'disabled' : ''}>
-      ${icon(task.icon)}<strong>${taskTitle(task)}</strong><small>+${task.points} ${t.points}</small>
+    return `<button class="sticker-button task-${task.kind} task-${task.id}" data-action="nearby-task" data-task-id="${task.id}" style="--task-index:${index}" ${done ? 'disabled' : ''}>
+      <span class="task-card-icon">${icon(task.icon)}</span><strong>${taskLabel(task)}</strong><small>+${task.points} ${t.points}</small>
     </button>`;
   }).join('');
-  const interaction = state.regionUnlocked
+  const regionPicker = devOnly(`<label class="demo-region-picker">区域<select data-action="set-region">${Object.values(REGIONS).map(region => `<option value="${region.id}" ${region.id === state.currentRegionId ? 'selected' : ''}>${state.language === 'zh' ? region.areaZh : region.area}</option>`).join('')}</select></label>`);
+  const interaction = currentRegionIsUnlocked()
     ? `<h3 class="nearby-title">${icon('locate')}${t.nearby}</h3>
-       <div class="task-scatter">${taskButtons}</div>`
+       <div class="task-scatter">${taskButtons}</div>${regionPicker}`
     : `<button class="region-unlock" data-action="unlock-region">
          <span class="region-unlock-roles">${roleAsset('sun', 'unlock-sun')}${roleAsset('moon', 'unlock-moon')}</span>
          <strong>${t.unlockArea}</strong>
          <small>${t.unlockAreaHint}</small>
-       </button>`;
+       </button>${regionPicker}`;
+  const region = currentRegion();
   return `<section class="home-screen">
     <section class="info-zone">
       <div class="area-line">${roleAsset('sun', 'home-sun')}<span>${t.activity}</span></div>
-      <h2 class="area-title">${t.lakeArea}</h2>
+      <h2 class="area-title">${state.language === 'zh' ? region.areaZh : region.area}</h2>
       <span class="update-pill">${icon('check')} ${t.updated} · ${MOCK_OUTDOOR_STATUS.updatedAt}</span>
       <div class="status-row">
         <div class="status-blob">${icon('thermometer')}<span><strong>${MOCK_OUTDOOR_STATUS.temperatureCelsius}°</strong><small>${t.temp}</small></span></div>
@@ -387,8 +393,9 @@ function homeMarkup() {
 
 function regionScanMarkup() {
   const t = words();
+  const region = currentRegion();
   return `<section class="screen"><div class="content">
-    <p class="eyebrow">${t.lakeArea}</p><h2>${t.regionScan}</h2>
+    <p class="eyebrow">${state.language === 'zh' ? region.areaZh : region.area}</p><h2>${t.regionScan}</h2>
     <div class="moon-scan-panel region-scan-panel">
       ${roleAsset('sun', 'scan-sun')}
       ${roleAsset('moon', 'scan-moon')}
@@ -420,6 +427,21 @@ function taskMarkup() {
   </div>${dockMarkup('')}</section>`;
 }
 
+function eggScanMarkup() {
+  const t = words();
+  const task = activeOrSelectedTask();
+  return `<section class="screen egg-scan-screen"><div class="content">
+    <p class="eyebrow">${t.egg}</p><h2>${taskLabel(task)}</h2>
+    <div class="egg-scan-panel moon-scan-panel">
+      <div class="egg-art image-sticker"><img src="${task.illustration}" alt=""></div>
+      <span class="scan-link">${roleAsset('star', 'egg-scan-star')}</span>
+    </div>
+    <p class="egg-hint">${t.eggHint}</p>
+    <button class="primary-button star-collect-button" data-action="star">${roleAsset('star', 'button-star')}<span>${t.scanStar}</span></button>
+    ${devOnly(`<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>`)}
+  </div>${dockMarkup('')}</section>`;
+}
+
 function taskScanMarkup() {
   const t = words();
   const task = activeOrSelectedTask();
@@ -445,7 +467,7 @@ function detectorMarkup() {
     : normalizeAngle(75 - normalizeAngle(heading - detectorStartHeading));
   const task = activeOrSelectedTask();
   return `<section class="screen detector-screen"><div class="content">
-    <p class="eyebrow">${t.detector}</p><h2>${taskTitle(task)}</h2>
+    <p class="eyebrow">${t.detector}</p><h2>${taskLabel(task)}</h2>
     <div class="detector ${detectorReadiness.ready ? 'is-ready' : ''}" style="--signal:${strength}; --target-angle:${rotation}deg; --counter-angle:${-rotation}deg; --star-scale:${0.74 + strength * 0.34}">
       <div class="signal-rings"><i></i><i></i><i></i></div>
       <div class="target-track"><span class="detector-task-icon">${icon(task.icon)}</span></div>
@@ -507,10 +529,14 @@ function ritualMarkup() {
   if (ritual.kind === 'region' || ritual.kind === 'task') {
     const isRegion = ritual.kind === 'region';
     const task = isRegion ? null : activeOrSelectedTask();
-    const stampLabel = isRegion ? t.lakeArea : taskArea(task);
+    const region = currentRegion();
+    const regionTasks = getTasksForRegion(state.currentRegionId);
+    const stampLabel = isRegion
+      ? (state.language === 'zh' ? region.areaZh : region.area)
+      : taskArea(task);
     const discovery = isRegion
-      ? `<span class="region-discovery-icons">${icon('paw')}${icon('watering')}</span><strong>${t.nearby}</strong>`
-      : `${icon(task.icon)}<strong>${taskTitle(task)}</strong>`;
+      ? `<span class="region-discovery-icons">${regionTasks.slice(0, 7).map(item => icon(item.icon)).join('')}</span><strong>${regionTasks.length} ${t.nearby}</strong>`
+      : `${icon(task.icon)}<strong>${taskLabel(task)}</strong>`;
     return `<section class="ritual-overlay ritual-arrival is-success" role="status" aria-live="assertive">
       <div class="ritual-stage">
         <div class="arrival-sky" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -547,7 +573,7 @@ function currentScreenMarkup() {
   const screens = {
     welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup,
     'region-scan': regionScanMarkup, 'task-scan': taskScanMarkup, 'map-view': mapViewMarkup,
-    task: taskMarkup, detector: detectorMarkup,
+    task: taskMarkup, 'egg-scan': eggScanMarkup, detector: detectorMarkup,
     sky: skyMarkup
   };
   return screens[state.screen]();
@@ -640,6 +666,13 @@ root.addEventListener('click', event => {
 });
 
 root.addEventListener('change', event => {
+  if (event.target.dataset.action === 'set-region') {
+    stopDetector();
+    state = setCurrentRegion(state, event.target.value);
+    clearNotice();
+    render();
+    return;
+  }
   if (event.target.dataset.action === 'test-heading') {
     manualHeading = Number(event.target.value);
     detectorListening = true;

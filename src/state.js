@@ -1,4 +1,4 @@
-import { TASKS } from './tasks.js';
+import { ALL_TASKS, DEFAULT_REGION_ID, REGIONS, getTasksForRegion } from './tasks.js';
 
 export function createInitialState() {
   return {
@@ -7,6 +7,8 @@ export function createInitialState() {
     devMode: false,
     paired: false,
     moonProfile: null,
+    currentRegionId: DEFAULT_REGION_ID,
+    unlockedRegionIds: [],
     regionUnlocked: false,
     activeTaskId: null,
     completedTaskIds: [],
@@ -37,20 +39,25 @@ export function confirmPair(state) {
 }
 
 export function beginRegionScan(state) {
-  if (!state.paired || state.regionUnlocked) return state;
+  if (!state.paired || state.unlockedRegionIds.includes(state.currentRegionId)) return state;
   return { ...state, screen: 'region-scan' };
 }
 
 export function unlockRegion(state) {
   if (!state.paired || state.screen !== 'region-scan') return state;
-  return { ...state, regionUnlocked: true, screen: 'home' };
+  const unlockedRegionIds = state.unlockedRegionIds.includes(state.currentRegionId)
+    ? state.unlockedRegionIds
+    : [...state.unlockedRegionIds, state.currentRegionId];
+  return { ...state, unlockedRegionIds, regionUnlocked: true, screen: 'home' };
 }
 
 export function openNearbyTask(state, taskId) {
+  const task = ALL_TASKS[taskId];
   if (
     !state.paired ||
-    !state.regionUnlocked ||
-    !TASKS[taskId] ||
+    !state.unlockedRegionIds.includes(state.currentRegionId) ||
+    !task ||
+    task.regionId !== state.currentRegionId ||
     state.completedTaskIds.includes(taskId)
   ) {
     return state;
@@ -68,7 +75,8 @@ export function openNearbyTask(state, taskId) {
 
 export function completeDetector(state) {
   if (!state.selectedTaskId || state.screen !== 'detector') return state;
-  return { ...state, screen: 'task-scan' };
+  const task = ALL_TASKS[state.selectedTaskId];
+  return { ...state, screen: task?.kind === 'egg' ? 'egg-scan' : 'task-scan' };
 }
 
 export function unlockTask(state) {
@@ -81,16 +89,34 @@ export function unlockTask(state) {
 }
 
 export function completeWithStar(state) {
-  if (!state.activeTaskId) return state;
-  const task = TASKS[state.activeTaskId];
+  const taskId = state.activeTaskId || (state.screen === 'egg-scan' ? state.selectedTaskId : null);
+  if (!taskId || state.completedTaskIds.includes(taskId)) return state;
+  const task = ALL_TASKS[taskId];
+  if (!task) return state;
   return {
     ...state,
     selectedTaskId: null,
     activeTaskId: null,
-    completedTaskIds: [...state.completedTaskIds, task.id],
+    completedTaskIds: [...state.completedTaskIds, taskId],
     score: state.score + task.points,
     screen: 'home'
   };
+}
+
+export function setCurrentRegion(state, regionId) {
+  if (!state.paired || !REGIONS[regionId] || regionId === state.currentRegionId) return state;
+  return {
+    ...state,
+    currentRegionId: regionId,
+    regionUnlocked: state.unlockedRegionIds.includes(regionId),
+    selectedTaskId: null,
+    activeTaskId: null,
+    screen: 'home'
+  };
+}
+
+export function currentRegionTasks(state) {
+  return getTasksForRegion(state.currentRegionId);
 }
 
 export function openMapBackup(state) {

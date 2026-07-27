@@ -801,9 +801,17 @@ h3 { font-size: 19px; line-height: 1.2; }
 .task-scatter {
   position: relative;
   z-index: 1;
-  min-height: 250px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 13px;
   margin-top: 14px;
+  padding: 2px 3px 18px;
+  max-height: min(520px, max(120px, calc(100dvh - 600px)));
+  overflow-y: auto;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
 }
+.task-scatter::-webkit-scrollbar { display: none; }
 .region-unlock {
   display: flex;
   width: min(100%, 315px);
@@ -839,31 +847,65 @@ h3 { font-size: 19px; line-height: 1.2; }
 .unlock-sun { left: 3px; transform: rotate(-6deg); }
 .unlock-moon { right: 3px; transform: rotate(6deg); }
 .sticker-button {
-  position: absolute;
-  width: 47%;
-  min-height: 142px;
+  position: relative;
+  width: auto;
+  min-height: 106px;
   flex-direction: column;
-  padding: 15px 10px;
+  padding: 9px 8px;
   color: var(--ink);
+  transform: rotate(-2deg);
 }
-.sticker-button .icon { font-size: 47px; }
-.sticker-button strong { font-size: 17px; line-height: 1.15; }
-.sticker-button small { font: 800 12px "Nunito", sans-serif; }
+.sticker-button .task-card-icon { display: grid; width: 46px; height: 46px; margin-bottom: 3px; place-items: center; border: 3px solid var(--white); border-radius: 48% 52% 46% 54%; background: rgba(255, 253, 244, .45); }
+.sticker-button .icon { font-size: 29px; }
+.sticker-button strong { max-width: 150px; font-size: 14px; line-height: 1.12; }
+.sticker-button small { font: 800 10px "Nunito", sans-serif; }
 .sticker-button.task-dog {
-  top: 5px;
-  left: 1%;
   border-radius: 45% 55% 48% 52% / 54% 47% 53% 46%;
   background: #f9d99b;
-  transform: rotate(-4deg);
 }
 .sticker-button.task-flowers {
-  top: 72px;
-  right: 0;
   border-radius: 55% 45% 53% 47% / 45% 54% 46% 55%;
   background: #a8d5a0;
-  transform: rotate(4deg);
 }
+.sticker-button.task-task:nth-child(3n) {
+  border-radius: 52% 48% 45% 55% / 48% 54% 46% 52%;
+  background: #f3b7a7;
+}
+.sticker-button.task-task:nth-child(3n + 1) {
+  border-radius: 45% 55% 52% 48% / 53% 46% 54% 47%;
+  background: #f7ca62;
+}
+.sticker-button.task-egg {
+  border: 3px dashed rgba(53, 84, 90, .32);
+  border-radius: 50% 46% 54% 48% / 47% 55% 45% 53%;
+  background: #bce7e7;
+}
+.sticker-button.task-egg .task-card-icon {
+  background: var(--yellow);
+}
+.sticker-button:nth-child(2n) { transform: rotate(2deg) translateY(2px); }
+.sticker-button:nth-child(3n) { transform: rotate(-1deg) translateY(-2px); }
 .sticker-button[disabled] { filter: saturate(.55); opacity: .58; cursor: default; }
+
+.demo-region-picker {
+  display: flex;
+  width: min(100%, 240px);
+  margin: 6px auto 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: rgba(53, 84, 90, .72);
+  font-size: 13px;
+}
+.demo-region-picker select {
+  min-width: 140px;
+  padding: 7px 10px;
+  border: 2px solid rgba(53, 84, 90, .16);
+  border-radius: 13px 10px 12px 11px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: "ZCOOL KuaiLe", system-ui, sans-serif;
+}
 
 .bottom-dock {
   position: fixed;
@@ -956,6 +998,35 @@ h3 { font-size: 19px; line-height: 1.2; }
   transform: translateX(-50%) rotate(-1deg);
   white-space: nowrap;
 }
+.egg-scan-screen .content { gap: 16px; }
+.egg-scan-panel {
+  display: grid;
+  min-height: 330px;
+  place-items: center;
+  background-color: #bce7e7;
+  background-image:
+    radial-gradient(circle at 22% 24%, rgba(255, 253, 244, .62) 0 4px, transparent 5px),
+    radial-gradient(circle at 78% 71%, rgba(255, 253, 244, .58) 0 3px, transparent 4px);
+}
+.egg-art {
+  width: min(66vw, 235px);
+  aspect-ratio: 1;
+  border-radius: 50% 45% 54% 47% / 47% 55% 44% 53%;
+  background: rgba(255, 253, 244, .54);
+  transform: rotate(-3deg);
+}
+.egg-art img { object-fit: contain; }
+.egg-scan-panel .scan-link {
+  top: auto;
+  left: auto;
+  right: 38px;
+  bottom: 34px;
+  width: 70px;
+  height: 70px;
+  transform: rotate(5deg);
+}
+.egg-scan-star { width: 48px; height: 48px; }
+.egg-hint { max-width: 300px; margin: 0 auto; text-align: center; opacity: .72; }
 .map-moon { width: 126px; height: 126px; margin-left: 4px; filter: drop-shadow(0 3px 0 rgba(53, 84, 90, .1)); }
 .map-role > .icon {
   position: absolute;

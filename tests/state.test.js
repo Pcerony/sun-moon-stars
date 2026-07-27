@@ -11,12 +11,14 @@ import {
   openNearbyTask,
   pairWithMoon,
   setLanguage,
+  setCurrentRegion,
   showSky,
   startActivity,
   toggleDevMode,
   unlockRegion,
   unlockTask
 } from '../src/state.js';
+import { ALL_TASKS, DEFAULT_REGION_ID, getTasksForRegion } from '../src/tasks.js';
 
 const PROFILE = { name: 'Aki', callName: 'Aki', likes: 'dogs' };
 
@@ -35,6 +37,8 @@ test('starts with the activity region and tasks locked', () => {
     devMode: false,
     paired: false,
     moonProfile: null,
+    currentRegionId: DEFAULT_REGION_ID,
+    unlockedRegionIds: [],
     regionUnlocked: false,
     activeTaskId: null,
     completedTaskIds: [],
@@ -69,7 +73,32 @@ test('a paired team can scan Moon to unlock the current region', () => {
 
   const unlocked = unlockRegion(scanning);
   assert.equal(unlocked.regionUnlocked, true);
+  assert.deepEqual(unlocked.unlockedRegionIds, [DEFAULT_REGION_ID]);
   assert.equal(unlocked.screen, 'home');
+});
+
+test('the current region exposes the expanded regular task set and recurring eggs', () => {
+  const tasks = getTasksForRegion(DEFAULT_REGION_ID);
+  assert.ok(tasks.some(task => task.id === 'dog'));
+  assert.ok(tasks.some(task => task.id === 'flowers'));
+  assert.ok(tasks.some(task => task.kind === 'egg'));
+  assert.ok(Object.values(ALL_TASKS).some(task => task.id === 'staff-hug'));
+  assert.ok(Object.values(ALL_TASKS).some(task => task.id === 'tree-rest'));
+});
+
+test('each simulated map region carries at least one reusable hidden egg', () => {
+  for (const regionId of ['lakeside', 'south', 'east']) {
+    assert.ok(getTasksForRegion(regionId).some(task => task.kind === 'egg'));
+  }
+});
+
+test('switching the simulated region preserves progress but requires a fresh Moon scan', () => {
+  const switched = setCurrentRegion(regionState(), 'south');
+  assert.equal(switched.currentRegionId, 'south');
+  assert.equal(switched.regionUnlocked, false);
+  assert.deepEqual(switched.unlockedRegionIds, [DEFAULT_REGION_ID]);
+  assert.equal(switched.screen, 'home');
+  assert.equal(beginRegionScan(switched).screen, 'region-scan');
 });
 
 test('tasks cannot open before the current region is unlocked', () => {
@@ -93,6 +122,19 @@ test('finishing detection asks for Moon before revealing task details', () => {
   const task = unlockTask(scanning);
   assert.equal(task.screen, 'task');
   assert.equal(task.activeTaskId, 'dog');
+});
+
+test('finding an Easter egg skips task details and goes straight to Star collection', () => {
+  const egg = regionState();
+  const eggId = getTasksForRegion(DEFAULT_REGION_ID).find(task => task.kind === 'egg').id;
+  const detector = openNearbyTask(egg, eggId);
+  const starScan = completeDetector(detector);
+  assert.equal(starScan.screen, 'egg-scan');
+  assert.equal(starScan.activeTaskId, null);
+  const complete = completeWithStar(starScan);
+  assert.equal(complete.screen, 'home');
+  assert.deepEqual(complete.completedTaskIds, [eggId]);
+  assert.equal(complete.score, ALL_TASKS[eggId].points);
 });
 
 test('a Star scan completes the active task exactly once and returns home', () => {

@@ -4,6 +4,7 @@ const ICONS = {
   check: 'ph-check',
   detector: 'ph-compass',
   dog: 'ph-dog',
+  egg: 'ph-egg',
   footprints: 'ph-footprints',
   flower: 'ph-flower',
   home: 'ph-house',
@@ -11,6 +12,7 @@ const ICONS = {
   locate: 'ph-crosshair',
   map: 'ph-map-trifold',
   menu: 'ph-list',
+  music: 'ph-music-note',
   nfc: 'ph-contactless-payment',
   pair: 'ph-users',
   paw: 'ph-paw-print',
@@ -18,6 +20,7 @@ const ICONS = {
   sparkle: 'ph-sparkle',
   star: 'ph-star',
   thermometer: 'ph-thermometer-simple',
+  tree: 'ph-tree',
   walk: 'ph-person-simple-walk',
   watering: 'ph-drop'
 };
