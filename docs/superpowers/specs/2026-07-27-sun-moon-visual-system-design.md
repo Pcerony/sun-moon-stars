@@ -1,221 +1,281 @@
-# Sun and Moon Visual System Design
+# “太阳与月亮”视觉系统设计规格
 
-## Goal
+## 目标
 
-Transform the existing functional prototype into a cohesive mobile game-like experience without changing its physical-first activity model. The approved homepage sample in the visual companion, `homepage-v6.html`, is the visual baseline for every participant-facing screen.
+在不改变线下活动逻辑的前提下，把现有功能原型升级成完整、统一、具有游戏质感的移动端体验。
 
-The work must preserve the complete NFC, pairing, task, detector, completion, sky, language, home, and hidden developer-mode flows.
+视觉伴侣中已经确认的 `homepage-v6.html` 是所有参与者页面的视觉基准。
 
-## Product Meaning
+本轮改造必须保留现有的 NFC 扫描、伙伴配对、任务、星星探测器、完成反馈、队伍星空、中英文切换、返回首页以及隐藏开发模式等完整功能。
 
-This is a cooperative outdoor activity, not a phone navigation product.
+## 产品定位
 
-- The Moon uses the printed map and leads broad navigation.
-- The Sun operates the phone and NFC scans.
-- The phone reports the current simulated area, nearby activities, progress, and moment-to-moment feedback.
-- The full digital map is a low-priority backup, not the primary home experience.
-- GPS, current area, temperature, steps, shared activity data, and community data remain simulated.
+这是一项跨代合作的户外活动，不是手机地图导航产品。
 
-## Reference Hierarchy
+- 月亮使用纸质地图，负责观察地图和带领大方向。
+- 太阳操作手机和 NFC 扫描。
+- 手机负责显示当前模拟区域、附近任务、活动进度和即时反馈。
+- 完整电子地图只是低优先级的备用功能，不是首页的主要内容。
+- GPS、当前位置、温度、步数、共享活动数据和社区数据均为模拟数据。
 
-### Activity Map
+## 视觉参考优先级
 
-`img/map/1120.jpg` is the activity map and must be used directly on the backup map screen. It is also a reference for the natural palette, park setting, task zones, and friendly illustrated tone.
+### 活动地图
 
-### UI Quality
+`img/map/1120.jpg` 是正式活动地图，必须直接用于备用地图页面。
 
-Every image in `img/参考/视觉风格/` informs the desired game UI quality:
+它同时用于参考：
 
-- illustrated surfaces rather than dashboard panels;
-- soft, cheerful colors;
-- rounded, filled pictograms;
-- sticker-like controls;
-- map and nature motifs;
-- minimal hard-edged geometry;
-- little or no conventional drop shadow.
+- 公园自然环境；
+- 活动区域；
+- 任务地点；
+- 亲切的手绘色彩；
+- 整体卡通氛围。
 
-The product must not copy Animal Crossing branding, logos, characters, or exact screens.
+### 界面质感
 
-### Character Style
+`img/参考/视觉风格/` 中的全部图片共同定义目标界面质感：
 
-Every image in `img/参考/人物/` is a mandatory character-style reference. These files are references only and must not be placed directly in the product UI.
+- 画面本身构成界面，而不是堆叠后台式面板；
+- 色彩柔和、明快、亲切；
+- 图标圆润、饱满；
+- 控件具有贴纸和游戏道具感；
+- 使用地图、植物、水面和自然元素；
+- 尽量避免硬朗、尖锐的几何形状；
+- 不使用传统的厚重阴影。
 
-Any final character illustration must preserve their defining style:
+最终产品不能直接复制《动物森友会》的品牌、标志、人物或完整页面。
 
-- older and younger participants together;
-- simple rounded faces and proportions;
-- warm expressions;
-- soft hand-drawn outlines;
-- uncomplicated park-activity poses;
-- colors consistent with the activity map.
+### 人物画风
 
-## Approved Homepage
+`img/参考/人物/` 中的全部图片是人物画风的强制参考，但不能直接放进正式产品。
 
-The homepage uses three visually distinct vertical regions.
+最终人物插图需要保留以下特征：
 
-### Information Region
+- 年长者与年轻参与者共同出现；
+- 圆润、简单的人物比例；
+- 温暖、友善的表情；
+- 柔和的手绘线条；
+- 简单明确的公园活动动作；
+- 与活动地图一致的颜色。
 
-- Light blue background.
-- Very faint hand-drawn water ripples.
-- A shallow curved lower boundary.
-- Shows only the simulated current area, update state, temperature, steps, and score.
-- The current area is status information and is not clickable.
-- Temperature and steps are display-only mock data with no threshold or health logic.
+## 已确认的首页结构
 
-### Interaction Region
+首页由三个纵向区域组成。
 
-- Warm cream background.
-- Very faint dashed map grid.
-- Sparse rounded grass marks shaped like small waves or the Chinese character `山`.
-- Shows nearby task buttons.
-- Task buttons use different sizes, positions, and slight rotations rather than a regular grid.
-- Task buttons are clearly interactive through button semantics, press feedback, and high-contrast task icons.
+### 信息展示区
 
-### Dock Region
+- 使用浅蓝色背景。
+- 背景具有非常淡的手绘水波纹。
+- 下边界使用浅弧形。
+- 只显示模拟当前位置、更新时间、温度、步数和积分。
+- 当前区域只用于展示状态，不可点击。
+- 温度和步数只是模拟数据，不触发任何健康判断、阈值或提醒。
 
-- Solid teal-green background with a shallow curved top.
-- Icon-only navigation for home, team sky, and backup map.
-- The backup map receives the lowest visual emphasis.
-- The active destination uses a pale yellow circular highlight.
+### 任务交互区
 
-## Visual Tokens
+- 使用温暖的米色背景。
+- 背景具有非常淡的地图虚线网格。
+- 稀疏分布类似小波浪或汉字“山”的圆润草纹。
+- 显示附近任务按钮。
+- 不使用等宽、等高、等间距的传统网格排列。
+- 任务按钮通过不同大小、位置和轻微角度形成散点构图。
+- 所有可点击任务必须有清晰的按压反馈和高辨识度图标。
 
-The initial palette is:
+### 底部导航区
 
-- Ink: `#35574b`
-- Information blue: `#b9dfeb`
-- Paper cream: `#f8f2dc`
-- Dock teal: `#54b4a3`
-- Task coral: `#f3957c`
-- Task mint: `#83bca0`
-- Accent yellow: `#f4c76a`
-- Sticker edge: `#fffaf0`
+- 使用纯绿色背景。
+- 顶部边界使用浅弧形。
+- 只使用图标导航：首页、队伍星空和备用地图。
+- 备用地图的视觉强调最低。
+- 当前页面使用浅黄色圆形底突出。
 
-Colors may be adjusted slightly during browser QA, but the resulting palette must retain the approved balance.
+## 颜色系统
 
-## Typography
+初始颜色如下：
 
-- Chinese display and short UI labels: ZCOOL KuaiLe.
-- Numbers and short Latin text: Nunito.
-- Fonts must be bundled locally as web fonts so Android Chrome does not depend on a live font service.
-- Chinese text remains short and large enough for outdoor reading.
-- Paragraph-style explanatory copy is removed wherever an icon, illustration, number, or immediate action can communicate the same meaning.
+- 主要文字：`#35574b`
+- 信息区浅蓝：`#b9dfeb`
+- 纸张米色：`#f8f2dc`
+- 底部导航绿色：`#54b4a3`
+- 任务珊瑚色：`#f3957c`
+- 任务薄荷绿：`#83bca0`
+- 强调黄色：`#f4c76a`
+- 贴纸白边：`#fffaf0`
 
-## Component Rules
+浏览器视觉检查时允许对颜色进行小幅调整，但不能破坏已确认的整体平衡。
 
-### Sticker Controls
+## 字体系统
 
-- Interactive task and status graphics may use asymmetric organic silhouettes.
-- Organic elements must not be arranged as a conventional equal-size grid.
-- Every silhouette must retain an unobstructed outline.
-- Components must not overlap each other or the Dock safe area.
-- Touch targets remain at least 48 by 48 CSS pixels.
+- 中文标题和极短界面文字使用“站酷快乐体”。
+- 数字和短英文使用 Nunito。
+- 字体必须作为本地网页字体随项目一起提供，Android Chrome 不能依赖在线字体服务。
+- 中文文字需要简短，并保证户外环境中的可读性。
+- 凡是能够用图标、插图、数字或直接动作表达的内容，都不使用说明段落。
 
-### Image Containers
+## 组件规则
 
-- Images use ordinary rounded rectangles.
-- Containers use a thin white sticker-like border.
-- Do not use irregular image clipping, decorative blobs, hard shadows, or layered ornaments around images.
-- Maintain stable horizontal page margins.
+### 不规则贴纸控件
 
-### Icons
+- 任务按钮和状态图形可以使用不对称的有机轮廓。
+- 不规则组件不能排列成传统的规则网格。
+- 每个轮廓必须保持完整、清楚，不被其他组件遮挡。
+- 组件不能进入底部导航的安全区域。
+- 触控区域至少为 48 × 48 CSS 像素。
 
-- Use filled or rounded-line icons with round caps and round joins.
-- Avoid sharp corners, thin technical symbols, and temporary Unicode glyphs in the production implementation.
-- Every icon-only control requires an accessible name and an appropriate tooltip when its meaning is not universally familiar.
+### 图片容器
 
-### Depth
+- 图片统一使用普通圆角矩形。
+- 容器外使用轻薄的白色贴纸描边。
+- 不使用不规则图片裁切。
+- 不在图片周围增加装饰色块、厚重阴影或无意义的层叠元素。
+- 图片左右必须保留稳定的页面间距。
 
-- Prefer color separation, white sticker edges, and subtle highlights.
-- Do not use thick offset shadows.
-- Avoid stacks of rectangular cards.
-- A screen should read as one illustrated surface with attached game objects.
+### 图标
 
-## Screen Application
+- 使用填充图标或圆润线条图标。
+- 所有线条端点和连接处都使用圆角。
+- 避免尖角、细小技术符号和临时 Unicode 字符。
+- 正式产品中的纯图标按钮必须提供无障碍名称。
+- 含义不够通用的图标需要提供悬停提示。
 
-### Welcome
+### 层次与质感
 
-Use one focal illustration or symbol, a single start action, and almost no explanatory copy. Any participant illustration must be newly produced in the required character style.
+- 优先使用颜色区分、白色贴纸边和轻微高光。
+- 不使用厚重的错位阴影。
+- 避免连续堆叠多个矩形卡片。
+- 每个页面应当像一张完整的游戏场景，上面附着必要的互动道具。
 
-### Pairing
+## 各页面视觉应用
 
-Center the NFC necklace interaction. Use a rounded necklace/NFC illustration, a short scan label, and visible scanning feedback. Hidden simulation controls remain absent until developer mode is unlocked.
+### 欢迎页
 
-### Introduction
+- 使用一个主要插图或符号。
+- 只保留一个开始操作。
+- 尽可能不使用说明文字。
+- 如果出现人物，必须重新制作符合指定人物画风的正式插图。
 
-Present the Moon profile with a newly produced character portrait or avatar. Replace paragraph instructions with a small sequence of name, speech, and paper-map icons plus only essential labels.
+### 配对页
 
-### Home
+- 以 NFC 月亮项链为视觉中心。
+- 使用圆润的项链和 NFC 插图。
+- 只保留极短的扫描文字。
+- 提供明确的扫描中反馈。
+- 隐藏模拟按钮在开发模式开启前不能出现。
 
-Implement the approved three-region homepage. The two nearby task stickers are clickable:
+### 互相认识页
 
-- selecting one updates the selected mock task;
-- the app then opens the existing paper-map prompt for that task;
-- the phone still does not provide turn-by-turn navigation.
+- 使用重新制作的月亮人物头像或半身插图。
+- 用姓名、说话和纸质地图图标代替说明段落。
+- 只保留必要文字。
 
-### Paper-Map Prompt
+### 首页
 
-Use a paper-map symbol, the selected task icon, and the Moon role cue. Keep the real map off this screen so the physical paper map remains primary.
+实现已经确认的三段式首页。
 
-### Backup Map
+两个附近任务贴纸可以点击：
 
-Display `img/map/1120.jpg` directly inside a normal rounded rectangular image container with a white sticker edge. Support comfortable mobile inspection without adding route lines or turn-by-turn directions.
+- 点击任务后更新当前选择的模拟任务；
+- 随后进入该任务的纸质地图提示页；
+- 手机仍然不能提供路线和逐步导航。
 
-### Task
+### 纸质地图提示页
 
-Use a custom task illustration, the task icon, and two clear actions: detector and NFC scan. Keep copy to the task name and the shortest necessary instruction.
+- 使用纸质地图图标、当前任务图标和月亮角色提示。
+- 不在该页面显示完整电子地图。
+- 继续强调由月亮查看纸质地图和带路。
 
-### Star Detector
+### 备用地图页
 
-Turn the existing compass detector into the main illustrated surface. Use rounded waves or rings, a soft directional marker, and changing color/scale to communicate signal strength. Preserve orientation, vibration, generated audio, and the hidden manual-heading control.
+- 直接使用 `img/map/1120.jpg`。
+- 地图放在普通圆角矩形图片容器中。
+- 使用白色贴纸描边。
+- 支持在手机上舒适查看。
+- 不增加路线、转向提示或逐步导航。
 
-### Completion
+### 任务页
 
-Use a large earned-Star object, point value, and two icon-forward actions: sky and continue. Avoid explanatory cards.
+- 使用正式制作的任务插图。
+- 显示任务图标。
+- 只保留两个明确操作：打开探测器和扫描 NFC。
+- 文字只保留任务名称和最短的必要提示。
 
-### Team Sky
+### 星星探测器
 
-Use an illustrated sky surface, collected Star objects, score, and compact community examples. Keep mock community data visually secondary. Reset remains a developer-oriented action and must not dominate the participant experience.
+- 将现有探测器变成页面的主要插图界面。
+- 使用圆润波纹、感应圆环和柔和的方向标记。
+- 用颜色、大小和动画表达信号强度。
+- 保留方向传感器、振动、音频反馈和隐藏的手动方向测试控件。
 
-### Developer Mode
+### 完成页
 
-Developer controls may use the same palette but must remain clearly separated and appear only after the existing title long-press. Normal participant screens must never reveal demo or prototype wording.
+- 使用一颗醒目的已获得星星。
+- 显示积分。
+- 只保留两个以图标为主的操作：查看星空和继续。
+- 不使用说明卡片。
 
-## Motion
+### 队伍星空页
 
-- Use short scale, fade, pulse, and float feedback.
-- Scanning, detector strength, task press, Star collection, and location refresh may animate.
-- Motion must not resize layout tracks or cause elements to collide.
-- Respect `prefers-reduced-motion`.
+- 使用完整的插画式星空界面。
+- 显示已收集的星星和积分。
+- 社区模拟数据保持次要。
+- 重置功能不能成为普通参与者页面的主要操作。
 
-## Responsive and Accessibility Requirements
+### 开发模式
 
-- Design for 320 to 460 CSS-pixel mobile widths first.
-- Maintain safe spacing above the Dock and around every organic silhouette.
-- Prevent text, badges, and icons from overlapping at all supported widths.
-- Keep high-contrast text and icon relationships.
-- Update the document `lang` attribute when the user changes language.
-- Provide accessible names for icon-only controls.
-- Preserve keyboard activation and visible focus treatment.
+- 开发控件可以沿用同一颜色系统。
+- 必须与普通参与者界面清晰分隔。
+- 只有通过现有的标题长按操作才能显示。
+- 普通参与者页面不能出现“演示”“测试”或“原型”等文字。
 
-## Asset Plan
+## 动效
 
-- Use the supplied map directly only on the backup map screen.
-- Do not ship the extracted character reference images.
-- Produce a small consistent set of final character and task illustrations from the supplied references.
-- Store production assets in a dedicated project asset directory with descriptive ASCII filenames.
-- Do not commit `.DS_Store`, browser artifacts, generated previews, credentials, or temporary image-generation files.
+- 使用短促的缩放、淡入、呼吸和轻微漂浮反馈。
+- 扫描、探测器信号、任务按压、星星收集和位置更新可以使用动画。
+- 动画不能改变固定布局尺寸。
+- 动画不能造成组件碰撞或文字遮挡。
+- 必须支持 `prefers-reduced-motion`。
 
-## Behavior and Testing
+## 响应式与无障碍
 
-- Preserve all existing pure state transitions unless the approved homepage requires a focused transition for selecting a nearby task and opening its paper-map prompt.
-- Add focused state tests for any changed transition.
-- Keep NFC behavior in `src/nfc.js`, workflow behavior in `src/state.js`, content in `src/tasks.js`, and rendering/integration in `src/app.js`.
-- Run `npm test`.
-- Exercise the full simulated flow for both tasks in a real mobile browser viewport.
-- Test narrow and wide mobile viewports for overlap, text fit, tap target size, and Dock clearance.
-- Real NFC and orientation hardware verification still require Android Chrome over HTTPS and physical tags.
+- 优先支持 320 至 460 CSS 像素宽的手机屏幕。
+- 底部导航上方必须保留安全距离。
+- 所有不规则组件之间都需要保留清楚的轮廓间距。
+- 任何屏幕宽度下都不能出现文字、积分徽章或图标重叠。
+- 文字和图标需要保持足够对比度。
+- 切换语言时同步更新页面的 `lang` 属性。
+- 纯图标控件必须提供无障碍名称。
+- 保留键盘操作和清晰的焦点状态。
 
-## Backup
+## 素材计划
 
-The original functional prototype is preserved at branch `codex/pre-visualization-backup`, pointing to commit `66d1e09`.
+- 活动地图只在备用地图页直接使用。
+- 人物参考图片不能作为正式产品素材。
+- 根据现有参考图重新制作一套数量克制、画风统一的人物和任务插图。
+- 正式素材保存到专门的项目素材目录。
+- 正式素材使用清楚的 ASCII 文件名。
+- 不提交 `.DS_Store`、浏览器截图、临时预览、账号凭据或图片生成过程文件。
+
+## 功能与测试
+
+- 除首页任务选择外，保留现有状态流程。
+- 首页新增“选择附近任务并进入纸质地图提示”的状态转换。
+- 所有状态转换修改都需要增加针对性测试。
+- NFC 行为继续放在 `src/nfc.js`。
+- 工作流行为继续放在 `src/state.js`。
+- 内容数据继续放在 `src/tasks.js`。
+- 页面渲染和浏览器集成继续放在 `src/app.js`。
+- 完成后运行 `npm test`。
+- 在真实手机尺寸浏览器中完整走通两个模拟任务。
+- 检查窄屏和宽屏下的遮挡、文字适配、触控区域和底部安全距离。
+- 真实 NFC 和方向传感器仍需在 Android Chrome、HTTPS 和实体标签上验证。
+
+## 原型备份
+
+视觉改造前的原始功能原型已经保存在分支：
+
+`codex/pre-visualization-backup`
+
+该分支指向提交：
+
+`66d1e09`
