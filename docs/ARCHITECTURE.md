@@ -24,7 +24,7 @@ The detector in `src/app.js` uses device orientation when available. It produces
 
 ## Content
 
-`src/tasks.js` holds the two demonstration tasks and local mock community data. Add future tasks there first, then extend state tests and the backup map markers together.
+`src/tasks.js` holds the two demonstration tasks, simulated outdoor status, and local mock community data. `assets/illustrations`, `assets/fonts`, and `assets/icons` contain the production visual assets used by the static interface. Add future tasks in `src/tasks.js` and extend state tests with any workflow change.
 
 ## Testing
 

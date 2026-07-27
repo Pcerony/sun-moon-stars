@@ -14,4 +14,14 @@ Participant screens must not expose prototype tooling. Long-pressing the app tit
 
 ## 2026-07-27: Backup Map
 
-The app includes a simplified backup park map. Replace this visual with the final printed-map asset when it becomes available; retain the same task markers and home navigation.
+The phone uses the supplied activity-map image only on the backup map screen. It does not provide turn-by-turn navigation or replace the Moon's physical paper map.
+
+## 2026-07-27: Visual System
+
+The participant interface uses a calm hand-drawn park style: a blue information zone, warm map-texture interaction area, irregular sticker controls, rounded Phosphor icons, and locally bundled display fonts. Image containers remain simple rounded rectangles with a light sticker outline. Text stays sparse and participant actions are icon-led.
+
+Generated character and task illustrations follow the supplied character references without directly reusing those reference images. The activity map is the only supplied reference asset used directly in the participant interface.
+
+## 2026-07-27: Simulated Outdoor Status
+
+Temperature, steps, current area, update time, task locations, and community scores are presentation-only mock data. NFC remains the only real external interaction in this prototype.

@@ -1,43 +1,33 @@
-# Sun and Moon
+# 太阳与月亮
 
-A mobile web prototype for a Dahu Park activity. The Moon uses the paper map, while the Sun uses the phone to collect Stars through NFC interactions and a compass-like Star detector.
+“太阳与月亮”是大濠公园活动的手机 Web 原型。年长参与者“月亮”使用纸质地图负责整体方向，年轻参与者“太阳”使用手机完成 NFC 配对、任务提示、星星探测与徽章收集。
 
-## What It Includes
+## 当前功能
 
-- A Sun and Moon pairing ritual that combines NFC, spoken introduction, and the physical map.
-- Real Web NFC scan triggers for Android Chrome.
-- Two demonstration tasks: meeting a friendly dog and watering flowers.
-- A Star detector with orientation, vibration, and generated audio feedback.
-- A persistent home screen, backup park map, team score, and local community sky.
+- 使用月亮项链完成 NFC 配对与相互介绍。
+- 首页显示模拟的当前区域、温度、步数、积分和附近任务。
+- 两个活动任务：和友善的小狗打招呼、给花浇水。
+- 使用方向传感器、震动和声音反馈寻找星星守护者。
+- 通过 NFC 星星徽章完成任务并更新队伍星空。
+- 纸质地图负责主要导航；手机中的活动地图只作为备用查看。
+- 默认中文，可切换英文。
 
-Read `docs/ARCHITECTURE.md` for the technical design and `AGENTS.md` for collaboration rules.
-
-## Run the demo
-
-Run a local static server:
+## 本地运行
 
 ```sh
 python3 -m http.server 8080
 ```
 
-Open the displayed local address in a browser. On desktop, use the two `Demo` scan buttons to run the complete flow.
+打开 `http://localhost:8080`。长按页面左上角“太阳与月亮”约 1.2 秒，可显示本地测试控制；普通参与者不会看到这些控制。
 
-## Test real NFC
+## NFC 实机测试
 
-1. Use an Android phone with NFC enabled and current Chrome.
-2. Host the app over HTTPS. Web NFC is not available on ordinary HTTP pages.
-3. Format the Moon necklace and both Star badges as readable NDEF tags.
-4. Start the activity, tap `Scan Moon necklace`, and touch the Moon tag.
-5. When the task is complete, tap `Scan Star badge` and touch either Star badge.
+Web NFC 只在支持 NFC 的 Android Chrome 和 HTTPS 环境中可用。当前原型接受可读取的通用 NDEF 标签，标签内容不会上传。
 
-The demonstration accepts either Star badge for either active task. NFC tag contents stay on the device and are not sent anywhere.
-
-## Test Mode
-
-Long-press the application title for about one second to reveal local test controls. These controls are intentionally hidden from normal participant pages.
-
-## Checks
+## 测试
 
 ```sh
 npm test
 ```
+
+技术结构见 `docs/ARCHITECTURE.md`，视觉规则见 `docs/superpowers/specs/2026-07-27-sun-moon-visual-system-design.md`。
