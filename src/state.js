@@ -3,7 +3,7 @@ import { TASKS } from './tasks.js';
 export function createInitialState() {
   return {
     selectedTaskId: 'dog',
-    language: 'en',
+    language: 'zh',
     devMode: false,
     paired: false,
     moonProfile: null,
@@ -64,6 +64,10 @@ export function openMap(state) {
 }
 
 export function openNearbyTask(state, taskId) {
+  if (state.paired && state.activeTaskId === taskId) {
+    return { ...state, screen: 'task' };
+  }
+
   if (
     !state.paired ||
     !TASKS[taskId] ||

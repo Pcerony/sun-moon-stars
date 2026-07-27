@@ -1,33 +1,42 @@
-import { COMMUNITY_TEAMS, TASKS } from './tasks.js';
+import { COMMUNITY_TEAMS, MOCK_OUTDOOR_STATUS, TASKS } from './tasks.js';
+import { icon } from './icons.js';
 import {
   activateMoon, completeWithStar, confirmPair, confirmStarKeeperFound, continueExploring, createInitialState,
-  goHome, openDetector, openMap, openMapBackup, pairWithMoon, selectDemoTask, setLanguage, showSky, startActivity, toggleDevMode
+  goHome, openDetector, openMapBackup, openNearbyTask, pairWithMoon, selectDemoTask, setLanguage,
+  showSky, startActivity, toggleDevMode
 } from './state.js';
 import { canScanNfc, scanTag } from './nfc.js';
 
 const TEXT = {
   en: {
-    activity: 'DAHU PARK ACTIVITY', title: 'Sun and Moon', unavailable: 'NFC is not available here. Please use Android Chrome on an NFC-enabled phone.',
-    nfcError: 'NFC is not available in this browser. Please use Android Chrome.', shared: 'A shared park activity', collect: 'Collect stars together.',
-    intro: 'The Moon carries the paper map. The Sun uses this phone to scan the Moon necklace and Star badges.', start: 'Start activity', scanMoonHint: 'Hold the Moon necklace against the phone.', scanStarHint: 'Hold the Star badge against the phone.',
-    pairing: 'Meet your Moon', pairingText: 'Scan the Moon necklace to begin getting to know each other.', pairingScan: 'Scan Moon necklace', profile: 'Moon profile', callName: 'Please call me', likes: 'I like',
-    sunPrompt: 'Now, please introduce yourself: your name, how you like to be addressed, and something you enjoy.', mapPrompt: 'Moon, please write the Sun’s information in the partner space on your paper map.', met: 'We have met', home: 'Our journey', homeWelcome: 'The Sun and Moon are ready to explore.', findNext: 'Find a Star', map: 'View Moon’s map', scoreboard: 'View the sky', backupMap: 'Park map', lake: 'Lake', dogZone: 'Friendly dog', flowerZone: 'Flower garden', youAreHere: 'You are here',
-    follow: "Follow the Moon's map.", route: 'Find a Star keeper together. This phone does not show the route.', ready: 'Ready at:', scanMoon: 'Scan Moon necklace', demoMoon: 'Demo: Moon scan',
-    demoLocation: 'Demo location', currentStar: 'Current Star', taskReady: 'When you are ready, ask the Star keeper for their badge.', scanStar: 'Scan Star badge', demoStar: 'Demo: Star scan', demoTools: 'Testing without NFC',
-    findStar: 'Find the Star keeper', detector: 'Star detector', detectorStart: 'Start sensing', detectorFound: 'We found the Star keeper', signalNone: 'Listening for a Star...', signalFaint: 'A faint signal', signalNear: 'The Star is nearby', signalFound: 'The Star is right here', testHeading: 'Test heading',
-    collected: 'Star collected', completed: 'You completed {task} together.', seeSky: 'See our sky', another: 'Find another Star', ourSky: 'Our sky', teamPoints: 'team points', stars: 'Stars collected', none: 'No Stars collected yet.',
-    parkSky: 'Park sky', parkText: '18 Stars have been collected by 6 teams today.', reset: 'Reset demo', teamSuffix: 'Stars'
+    activity: 'DAHU PARK', title: 'Sun & Moon', unavailable: 'NFC needs Android Chrome and an NFC-enabled phone.',
+    nfcError: 'NFC is not available in this browser.', hello: 'Explore together', start: 'Start',
+    pairing: 'Meet your Moon', scanMoon: 'Scan Moon', scanMoonHint: 'Hold the Moon necklace near the phone.',
+    profile: 'Moon profile', callName: 'Call me', likes: 'Likes', introduce: 'Your turn',
+    introHint: 'Say your name and one thing you like.', met: 'Ready',
+    nearby: 'Nearby', lakeArea: 'Lakeside', updated: 'updated', temp: 'temperature', steps: 'steps', points: 'points',
+    paperMap: "Moon's paper map", followMoon: 'Follow the Moon', mapHint: 'Find this place together.',
+    scanToStart: 'Scan Moon', currentStar: 'Star task', detector: 'Detector', scanStar: 'Collect Star',
+    scanStarHint: 'Hold the Star badge near the phone.', detectorStart: 'Listen', detectorFound: 'Found',
+    signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!',
+    collected: 'Star collected', sky: 'Our sky', continue: 'Continue', parkMap: 'Backup map',
+    community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
+    demoLocation: 'Task', testHeading: 'Heading'
   },
   zh: {
-    activity: '大濠公园活动', title: '太阳与月亮', unavailable: '此设备暂时不能使用 NFC，请用已开启 NFC 的 Android Chrome。', nfcError: '此浏览器不能使用 NFC。请用 Android Chrome。', shared: '一场共同探索的公园活动', collect: '一起收集星星。',
-    intro: '月亮拿着纸质地图，太阳用手机扫描月亮项链和星星勋章。', start: '开始活动', scanMoonHint: '请把月亮项链贴近手机。', scanStarHint: '请把星星勋章贴近手机。',
-    pairing: '认识你的月亮', pairingText: '扫描月亮项链，开始认识彼此。', pairingScan: '扫描月亮项链', profile: '月亮名片', callName: '希望别人称呼我', likes: '我喜欢',
-    sunPrompt: '现在请太阳口述：你的名字、希望别人怎样称呼你，以及一件你喜欢的东西。', mapPrompt: '请月亮把太阳的信息写在纸质地图的“伙伴栏”里。', met: '我们认识了', home: '我们的旅程', homeWelcome: '太阳和月亮已经准备好一起探索。', findNext: '寻找一颗星星', map: '查看月亮的地图', scoreboard: '查看星空', backupMap: '公园地图', lake: '湖', dogZone: '友善的小狗', flowerZone: '花园', youAreHere: '你在这里',
-    follow: '跟着月亮的地图前进。', route: '一起找到星星守护者。这部手机不显示路线。', ready: '当前演示地点：', scanMoon: '扫描月亮项链', demoMoon: '演示：扫描月亮',
-    demoLocation: '演示地点', currentStar: '当前星星任务', taskReady: '完成后，请向星星守护者领取勋章。', scanStar: '扫描星星勋章', demoStar: '演示：扫描星星', demoTools: '无 NFC 时的演示工具',
-    findStar: '寻找星星守护者', detector: '星星探测器', detectorStart: '开始感应', detectorFound: '我们找到星星守护者了', signalNone: '正在聆听星星的信号……', signalFaint: '有微弱的信号', signalNear: '星星就在附近', signalFound: '星星就在这里', testHeading: '测试方向',
-    collected: '已收集星星', completed: '你们一起完成了“{task}”。', seeSky: '查看我们的星空', another: '寻找另一颗星星', ourSky: '我们的星空', teamPoints: '队伍积分', stars: '已收集的星星', none: '还没有收集到星星。',
-    parkSky: '公园星空', parkText: '今天已有 6 支队伍收集了 18 颗星星。', reset: '重置演示', teamSuffix: '颗星星'
+    activity: '大濠公园', title: '太阳与月亮', unavailable: 'NFC 需要使用支持 NFC 的 Android Chrome 手机。',
+    nfcError: '此浏览器暂时不能使用 NFC。', hello: '一起出发吧', start: '开始',
+    pairing: '认识月亮', scanMoon: '扫描月亮', scanMoonHint: '把月亮项链贴近手机。',
+    profile: '月亮名片', callName: '请叫我', likes: '我喜欢', introduce: '轮到太阳',
+    introHint: '说出你的名字和一件喜欢的事。', met: '准备好了',
+    nearby: '附近任务', lakeArea: '湖畔区', updated: '刚刚更新', temp: '温度', steps: '步数', points: '积分',
+    paperMap: '月亮的纸地图', followMoon: '跟着月亮', mapHint: '一起找到这个地方。',
+    scanToStart: '扫描月亮', currentStar: '星星任务', detector: '探测', scanStar: '收集星星',
+    scanStarHint: '把星星勋章贴近手机。', detectorStart: '开始感应', detectorFound: '找到了',
+    signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！',
+    collected: '收集成功', sky: '我们的星空', continue: '继续探索', parkMap: '备用地图',
+    community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
+    demoLocation: '任务', testHeading: '测试方向'
   }
 };
 
@@ -41,23 +50,36 @@ let manualHeading = null;
 let lastPulse = 0;
 let orientationListening = false;
 let audioContext = null;
+let renderedScreen = null;
 const root = document.querySelector('#app');
 const notice = document.querySelector('#notice');
 const languageSelect = document.querySelector('#language-select');
 const homeButton = document.querySelector('#home-button');
-const appTitle = document.querySelector('.app-header h1');
+const appTitle = document.querySelector('.brand-lockup');
+const appShell = document.querySelector('.app-shell');
 let devPressTimer;
 
 function words() { return TEXT[state.language]; }
 function taskTitle(task) { return state.language === 'zh' ? task.titleZh : task.title; }
 function taskInstruction(task) { return state.language === 'zh' ? task.instructionZh : task.instruction; }
 function starName(task) { return state.language === 'zh' ? task.starZh : task.star; }
-function format(text, values) { return text.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? ''); }
+function taskArea(task) { return state.language === 'zh' ? task.areaZh : task.area; }
 function showNotice(message) { notice.textContent = message; notice.hidden = false; }
 function clearNotice() { notice.hidden = true; notice.textContent = ''; }
 function activeOrSelectedTask() { return TASKS[state.activeTaskId || state.selectedTaskId]; }
-function taskOptions() { return Object.values(TASKS).map(task => `<option value="${task.id}" ${task.id === state.selectedTaskId ? 'selected' : ''}>${taskTitle(task)}</option>`).join(''); }
-function devOnly(markup) { return state.devMode ? markup : ''; }
+function devOnly(markup) { return state.devMode ? `<details class="demo-panel" open><summary>${words().demoTools}</summary>${markup}</details>` : ''; }
+function taskOptions() {
+  return Object.values(TASKS).map(task => `<option value="${task.id}" ${task.id === state.selectedTaskId ? 'selected' : ''}>${taskTitle(task)}</option>`).join('');
+}
+
+function dockMarkup(active) {
+  const t = words();
+  return `<nav class="bottom-dock" aria-label="${t.title}">
+    <button class="dock-button ${active === 'home' ? 'active' : ''}" data-action="home" aria-label="${t.nearby}" title="${t.nearby}">${icon('home')}</button>
+    <button class="dock-button ${active === 'sky' ? 'active' : ''}" data-action="sky" aria-label="${t.sky}" title="${t.sky}">${icon('star')}</button>
+    <button class="dock-button ${active === 'map' ? 'active' : ''}" data-action="view-map" aria-label="${t.parkMap}" title="${t.parkMap}">${icon('map')}</button>
+  </nav>`;
+}
 
 function normalizeAngle(angle) { return ((angle % 360) + 360) % 360; }
 function angleDistance(a, b) { return Math.abs(((a - b + 540) % 360) - 180); }
@@ -82,14 +104,12 @@ function pulse(strength) {
   playSignalTone(strength);
   lastPulse = now;
 }
-
 function prepareAudio() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return;
   audioContext ??= new AudioContextClass();
   if (audioContext.state === 'suspended') audioContext.resume();
 }
-
 function playSignalTone(strength) {
   if (!audioContext || audioContext.state !== 'running') return;
   const oscillator = audioContext.createOscillator();
@@ -103,7 +123,6 @@ function playSignalTone(strength) {
   oscillator.start();
   oscillator.stop(audioContext.currentTime + 0.13);
 }
-
 function stopDetector() {
   detectorListening = false;
   manualHeading = null;
@@ -141,37 +160,101 @@ async function startDetector() {
 
 function welcomeMarkup() {
   const t = words();
-  return `<section class="screen"><p class="eyebrow">${t.shared}</p><h2>${t.collect}</h2><p>${t.intro}</p><div class="actions"><button data-action="start">${t.start}</button></div></section>`;
+  return `<section class="screen welcome-screen"><div class="content">
+    <p class="eyebrow">${t.activity}</p>
+    <h2>${t.hello}</h2>
+    <div class="image-sticker welcome-image"><img src="./assets/illustrations/welcome-pair.png" alt=""></div>
+    <button class="primary-button" data-action="start">${icon('sparkle')}${t.start}${icon('arrow')}</button>
+  </div></section>`;
 }
 
 function pairingMarkup() {
   const t = words();
-  return `<section class="screen"><p class="eyebrow">${t.pairing}</p><h2>${t.pairing}</h2><p>${t.pairingText}</p><div class="actions"><button data-action="pair-moon">${t.pairingScan}</button></div>${devOnly(`<details open><summary>${t.demoTools}</summary><button class="secondary" data-action="simulate-pair">${t.demoMoon}</button></details>`)}</section>`;
+  return `<section class="screen"><div class="content">
+    <p class="eyebrow">${t.pairing}</p><h2>${t.scanMoon}</h2>
+    <div class="nfc-orbit">${icon('nfc')}</div>
+    <button class="primary-button" data-action="pair-moon">${icon('nfc')}${t.scanMoon}</button>
+    ${devOnly(`<button class="secondary-button" data-action="simulate-pair">${icon('nfc')}${t.demoScan}</button>`)}
+  </div></section>`;
 }
 
 function introductionMarkup() {
-  const t = words(); const profile = state.moonProfile;
-  return `<section class="screen"><p class="eyebrow">${t.profile}</p><div class="card"><h2>${profile.name}</h2><p><strong>${t.callName}:</strong> ${profile.callName}</p><p><strong>${t.likes}:</strong> ${profile.likes}</p></div><div class="card"><h3>${t.sunPrompt}</h3><p>${t.mapPrompt}</p></div><div class="actions"><button data-action="confirm-pair">${t.met}</button></div></section>`;
+  const t = words();
+  const profile = state.moonProfile;
+  return `<section class="screen"><div class="content">
+    <p class="eyebrow">${t.profile}</p>
+    <div class="image-sticker profile-image"><img src="./assets/illustrations/moon-profile.png" alt=""></div>
+    <div class="profile-name"><h2>${profile.callName}</h2><span class="task-chip">${icon('pair')}${t.callName}</span></div>
+    <div class="mini-facts"><span class="mini-fact">${icon('flower')}${state.language === 'zh' ? '花朵和小狗' : profile.likes}</span></div>
+    <div class="speech-strip">${icon('pair')}<span><strong>${t.introduce}</strong><br><small>${t.introHint}</small></span></div>
+    <button class="primary-button" data-action="confirm-pair">${icon('check')}${t.met}</button>
+  </div></section>`;
 }
 
 function homeMarkup() {
   const t = words();
-  return `<section class="screen"><p class="eyebrow">${t.home}</p><h2>${t.home}</h2><p>${t.homeWelcome}</p><div class="card"><p class="score">${state.score}</p><p>${t.teamPoints}</p></div><div class="actions"><button data-action="open-map">${t.findNext}</button><button data-action="view-map">${t.map}</button><button data-action="sky">${t.scoreboard}</button></div></section>`;
+  const taskButtons = Object.values(TASKS).map((task, index) => {
+    const done = state.completedTaskIds.includes(task.id);
+    return `<button class="sticker-button task-${task.id}" data-action="nearby-task" data-task-id="${task.id}" ${done ? 'disabled' : ''}>
+      ${icon(task.icon)}<strong>${taskTitle(task)}</strong><small>+${task.points} ${t.points}</small>
+    </button>`;
+  }).join('');
+  return `<section class="home-screen">
+    <section class="info-zone">
+      <div class="area-line">${icon('locate')}<span>${t.activity}</span></div>
+      <h2 class="area-title">${t.lakeArea}</h2>
+      <span class="update-pill">${icon('check')} ${t.updated} · ${MOCK_OUTDOOR_STATUS.updatedAt}</span>
+      <div class="status-row">
+        <div class="status-blob">${icon('thermometer')}<span><strong>${MOCK_OUTDOOR_STATUS.temperatureCelsius}°</strong><small>${t.temp}</small></span></div>
+        <div class="status-blob">${icon('footprints')}<span><strong>${MOCK_OUTDOOR_STATUS.steps}</strong><small>${t.steps}</small></span></div>
+        <div class="status-blob">${icon('star')}<span><strong>${state.score}</strong><small>${t.points}</small></span></div>
+      </div>
+    </section>
+    <section class="interaction-zone">
+      <h3 class="nearby-title">${icon('locate')}${t.nearby}</h3>
+      <div class="task-scatter">${taskButtons}</div>
+    </section>
+    ${dockMarkup('home')}
+  </section>`;
+}
+
+function mapMarkup() {
+  const t = words();
+  const task = activeOrSelectedTask();
+  return `<section class="screen"><div class="content">
+    <p class="eyebrow">${t.paperMap}</p><h2>${t.followMoon}</h2>
+    <div class="paper-prompt">
+      ${icon('map')}
+      <span class="task-chip">${icon(task.icon)}${taskArea(task)}</span>
+      <p>${t.mapHint}</p>
+    </div>
+    <button class="primary-button" data-action="moon">${icon('nfc')}${t.scanToStart}</button>
+    ${devOnly(`<label>${t.demoLocation}<select data-action="select-task">${taskOptions()}</select></label><button class="secondary-button" data-action="simulate-moon">${icon('nfc')}${t.demoScan}</button>`)}
+  </div>${dockMarkup('')}</section>`;
 }
 
 function mapViewMarkup() {
   const t = words();
-  return `<section class="screen"><p class="eyebrow">${t.backupMap}</p><h2>${t.backupMap}</h2><div class="park-map" role="img" aria-label="Park map with lake, friendly dog, and flower garden"><div class="lake">${t.lake}</div><div class="map-path path-one"></div><div class="map-path path-two"></div><div class="map-marker marker-dog">&#9733;<span>${t.dogZone}</span></div><div class="map-marker marker-flowers">&#9733;<span>${t.flowerZone}</span></div><div class="map-you">&#9679;<span>${t.youAreHere}</span></div></div></section>`;
-}
-
-function mapMarkup() {
-  const t = words(); const task = activeOrSelectedTask();
-  return `<section class="screen"><p class="eyebrow">${t.follow}</p><h2>${t.follow}</h2><p>${t.route}</p><div class="card"><p class="status">${t.ready} ${taskTitle(task)}</p><div class="actions"><button data-action="moon">${t.scanMoon}</button></div>${devOnly(`<div class="demo-control"><label>${t.demoLocation}<select data-action="select-task">${taskOptions()}</select></label><button class="secondary" data-action="simulate-moon">${t.demoMoon}</button></div>`)}</div></section>`;
+  return `<section class="screen"><div class="content">
+    <p class="eyebrow">${t.parkMap}</p><h2>${t.parkMap}</h2>
+    <div class="image-sticker map-image"><img src="./img/map/1120.jpg" alt="${t.parkMap}"></div>
+  </div>${dockMarkup('map')}</section>`;
 }
 
 function taskMarkup() {
-  const t = words(); const task = activeOrSelectedTask();
-  return `<section class="screen"><p class="eyebrow">${t.currentStar}</p><div class="card"><h2>${taskTitle(task)}</h2><p>${taskInstruction(task)}</p></div><div class="actions"><button data-action="detector">${t.findStar}</button></div><p>${t.taskReady}</p><div class="actions"><button data-action="star">${t.scanStar}</button></div>${devOnly(`<details open><summary>${t.demoTools}</summary><button class="secondary" data-action="simulate-star">${t.demoStar}</button></details>`)}</section>`;
+  const t = words();
+  const task = activeOrSelectedTask();
+  return `<section class="screen task-screen"><div class="content">
+    <p class="eyebrow">${t.currentStar}</p>
+    <div class="task-heading"><h2>${taskTitle(task)}</h2><span class="points-badge">${icon('star')}+${task.points}</span></div>
+    <div class="image-sticker task-image"><img src="${task.illustration}" alt=""></div>
+    <p>${taskInstruction(task)}</p>
+    <div class="task-actions">
+      <button class="icon-action" data-action="detector">${icon('detector')}<span>${t.detector}</span></button>
+      <button class="icon-action" data-action="star">${icon('nfc')}<span>${t.scanStar}</span></button>
+    </div>
+    ${devOnly(`<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>`)}
+  </div>${dockMarkup('')}</section>`;
 }
 
 function detectorMarkup() {
@@ -179,28 +262,71 @@ function detectorMarkup() {
   const strength = signalStrength();
   const rotation = manualHeading ?? detectorHeading ?? 0;
   const task = activeOrSelectedTask();
-  return `<section class="screen detector-screen"><p class="eyebrow">${t.detector}</p><h2>${taskTitle(task)}</h2><div class="detector" style="--signal:${strength}; --rotation:${rotation}deg"><div class="signal-rings"><i></i><i></i><i></i></div><div class="compass-arrow">&#9650;</div><strong>${signalMessage(strength)}</strong></div><div class="actions"><button data-action="start-detector">${t.detectorStart}</button><button data-action="found-keeper">${t.detectorFound}</button></div>${devOnly(`<div class="demo-control"><label>${t.testHeading}<input type="range" min="0" max="360" value="${manualHeading ?? 0}" data-action="test-heading"></label></div>`)}</section>`;
+  return `<section class="screen detector-screen"><div class="content">
+    <p class="eyebrow">${t.detector}</p><h2>${taskTitle(task)}</h2>
+    <div class="detector" style="--signal:${strength}; --rotation:${rotation}deg">
+      <div class="signal-rings"><i></i><i></i><i></i></div>
+      <div class="compass-arrow">${icon('locate')}</div>
+      <strong>${signalMessage(strength)}</strong>
+    </div>
+    <div class="actions">
+      <button class="primary-button" data-action="start-detector">${icon('detector')}${t.detectorStart}</button>
+      <button class="secondary-button" data-action="found-keeper">${icon('check')}${t.detectorFound}</button>
+    </div>
+    ${devOnly(`<label>${t.testHeading}<input type="range" min="0" max="360" value="${manualHeading ?? 0}" data-action="test-heading"></label>`)}
+  </div>${dockMarkup('')}</section>`;
 }
 
 function completeMarkup() {
-  const t = words(); const task = TASKS[state.completedTaskIds.at(-1)];
-  return `<section class="screen"><p class="eyebrow">${t.collected}</p><div class="card"><h2>${starName(task)}</h2><p>${format(t.completed, { task: taskTitle(task) })}</p><p class="score">+${task.points}</p></div><div class="actions"><button data-action="sky">${t.seeSky}</button><button class="secondary" data-action="continue">${t.another}</button></div></section>`;
+  const t = words();
+  const task = TASKS[state.completedTaskIds.at(-1)];
+  return `<section class="screen completion-screen"><div class="content">
+    <p class="eyebrow">${t.collected}</p>
+    <div class="big-star">${icon('star')}</div>
+    <h2>${starName(task)}</h2>
+    <p class="score-pop">+${task.points}</p>
+    <div class="actions">
+      <button class="primary-button" data-action="sky">${icon('star')}${t.sky}</button>
+      <button class="secondary-button" data-action="continue">${icon('walk')}${t.continue}</button>
+    </div>
+  </div>${dockMarkup('')}</section>`;
 }
 
 function skyMarkup() {
   const t = words();
-  const stars = state.completedTaskIds.map(id => `<li>${starName(TASKS[id])}</li>`).join('') || `<li>${t.none}</li>`;
-  const filledStars = state.completedTaskIds.map(() => '<span class="collected" aria-label="Collected Star">*</span>').join('');
-  return `<section class="screen"><p class="eyebrow">${t.ourSky}</p><div class="card"><p class="score">${state.score}</p><p>${t.teamPoints}</p></div><div class="sky" aria-label="Team sky">${filledStars}<span>*</span><span>*</span><span>*</span></div><div class="card"><h3>${t.stars}</h3><ul class="star-list">${stars}</ul></div><div class="card"><h3>${t.parkSky}</h3><p>${t.parkText}</p><ul class="team-list">${COMMUNITY_TEAMS.map(team => `<li>${team.name}: ${team.stars} ${t.teamSuffix}</li>`).join('')}</ul></div><div class="actions"><button data-action="continue">${t.another}</button><button class="secondary" data-action="reset">${t.reset}</button></div></section>`;
+  const collected = state.completedTaskIds.map(() => icon('star', 'collected')).join('');
+  return `<section class="screen sky-screen"><div class="content">
+    <p class="eyebrow">${t.sky}</p>
+    <div class="sky-score"><h2>${t.sky}</h2><strong>${state.score}</strong></div>
+    <div class="star-field">${collected}${icon('star')}${icon('star')}${icon('star')}${icon('star')}</div>
+    <h3>${t.community}</h3>
+    <div class="community-strip">${COMMUNITY_TEAMS.map(team => `<span>${team.name} · ${team.stars}${icon('star')}</span>`).join('')}</div>
+    <button class="secondary-button" data-action="continue">${icon('walk')}${t.continue}</button>
+    ${devOnly(`<button class="secondary-button" data-action="reset">${icon('reset')}${t.reset}</button>`)}
+  </div>${dockMarkup('sky')}</section>`;
 }
 
 function render() {
   const t = words();
-  document.querySelector('.app-header p').textContent = t.activity;
-  document.querySelector('.app-header h1').textContent = t.title;
+  const screenChanged = renderedScreen !== state.screen;
+  renderedScreen = state.screen;
+  document.documentElement.lang = state.language === 'zh' ? 'zh-CN' : 'en';
+  document.title = t.title;
+  appShell.dataset.screen = state.screen;
+  document.querySelector('.brand-lockup small').textContent = t.activity;
+  document.querySelector('.brand-lockup strong').textContent = t.title;
   languageSelect.value = state.language;
+  homeButton.innerHTML = icon('back');
+  homeButton.setAttribute('aria-label', t.nearby);
+  homeButton.title = t.nearby;
   homeButton.hidden = !state.paired || state.screen === 'home';
-  root.innerHTML = ({ welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup, map: mapMarkup, 'map-view': mapViewMarkup, task: taskMarkup, detector: detectorMarkup, complete: completeMarkup, sky: skyMarkup })[state.screen]();
+  const screens = {
+    welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup,
+    map: mapMarkup, 'map-view': mapViewMarkup, task: taskMarkup, detector: detectorMarkup,
+    complete: completeMarkup, sky: skyMarkup
+  };
+  root.innerHTML = screens[state.screen]();
+  if (screenChanged) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
 }
 
 async function performScan(kind) {
@@ -209,11 +335,8 @@ async function performScan(kind) {
   showNotice(kind === 'star' ? words().scanStarHint : words().scanMoonHint);
   try {
     await scanTag();
-    if (kind === 'pair') {
-      state = pairWithMoon(state, DEMO_MOON);
-    } else {
-      state = kind === 'moon' ? activateMoon(state) : completeWithStar(state);
-    }
+    if (kind === 'pair') state = pairWithMoon(state, DEMO_MOON);
+    else state = kind === 'moon' ? activateMoon(state) : completeWithStar(state);
   } catch (error) {
     showNotice(error.message === 'NFC is not available in this browser. Use Android Chrome or the demo button.' ? words().nfcError : error.message);
   } finally {
@@ -223,8 +346,9 @@ async function performScan(kind) {
 }
 
 root.addEventListener('click', event => {
-  const action = event.target.dataset.action;
-  if (!action || action === 'select-task') return;
+  const control = event.target.closest('[data-action]');
+  if (!control || control.dataset.action === 'select-task') return;
+  const action = control.dataset.action;
   clearNotice();
   if (action === 'start') state = startActivity(state);
   if (action === 'pair-moon') performScan('pair');
@@ -235,12 +359,12 @@ root.addEventListener('click', event => {
   if (action === 'found-keeper') { stopDetector(); state = confirmStarKeeperFound(state); }
   if (action === 'simulate-pair') state = pairWithMoon(state, DEMO_MOON);
   if (action === 'confirm-pair') state = confirmPair(state);
-  if (action === 'open-map') state = openMap(state);
-  if (action === 'view-map') state = openMapBackup(state);
+  if (action === 'nearby-task') state = openNearbyTask(state, control.dataset.taskId);
   if (action === 'simulate-moon') state = activateMoon(state);
   if (action === 'simulate-star') state = completeWithStar(state);
+  if (action === 'view-map') state = openMapBackup(state);
   if (action === 'sky') state = showSky(state);
-  if (action === 'continue') state = continueExploring(state);
+  if (action === 'home' || action === 'continue') state = action === 'home' ? goHome(state) : continueExploring(state);
   if (action === 'reset') state = createInitialState();
   render();
 });
@@ -258,11 +382,26 @@ root.addEventListener('change', event => {
     render();
   }
 });
-languageSelect.addEventListener('change', event => { state = setLanguage(state, event.target.value); clearNotice(); render(); });
-homeButton.addEventListener('click', () => { stopDetector(); state = goHome(state); clearNotice(); render(); });
+
+languageSelect.addEventListener('change', event => {
+  state = setLanguage(state, event.target.value);
+  clearNotice();
+  render();
+});
+homeButton.addEventListener('click', () => {
+  stopDetector();
+  state = goHome(state);
+  clearNotice();
+  render();
+});
 appTitle.addEventListener('pointerdown', () => {
-  devPressTimer = setTimeout(() => { state = toggleDevMode(state); clearNotice(); render(); }, 1200);
+  devPressTimer = setTimeout(() => {
+    state = toggleDevMode(state);
+    clearNotice();
+    render();
+  }, 1200);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => appTitle.addEventListener(type, () => clearTimeout(devPressTimer)));
+
 if (!canScanNfc()) showNotice(words().unavailable);
 render();

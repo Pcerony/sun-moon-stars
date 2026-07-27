@@ -20,7 +20,7 @@ import {
 test('starts with no active task and no score', () => {
   assert.deepEqual(createInitialState(), {
     selectedTaskId: 'dog',
-    language: 'en',
+    language: 'zh',
     devMode: false,
     paired: false,
     moonProfile: null,
@@ -89,6 +89,17 @@ test('a completed nearby task cannot be reopened', () => {
   const complete = completeWithStar(activateMoon(paired));
 
   assert.deepEqual(openNearbyTask(complete, 'dog'), complete);
+});
+
+test('an active nearby task can be resumed after viewing another screen', () => {
+  const paired = confirmPair(pairWithMoon(createInitialState(), {
+    name: 'Aki',
+    callName: 'Aki',
+    likes: 'dogs'
+  }));
+  const active = goHome(activateMoon(paired));
+
+  assert.equal(openNearbyTask(active, 'dog').screen, 'task');
 });
 
 test('a Star scan completes the active task exactly once', () => {
