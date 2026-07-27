@@ -18,7 +18,7 @@ import {
   unlockRegion,
   unlockTask
 } from '../src/state.js';
-import { ALL_TASKS, DEFAULT_REGION_ID, getTasksForRegion } from '../src/tasks.js';
+import { ALL_TASKS, DEFAULT_REGION_ID, REGIONS, getTasksForRegion } from '../src/tasks.js';
 
 const PROFILE = { name: 'Aki', callName: 'Aki', likes: 'dogs' };
 
@@ -86,9 +86,13 @@ test('the current region exposes the expanded regular task set and recurring egg
   assert.ok(Object.values(ALL_TASKS).some(task => task.id === 'tree-rest'));
 });
 
-test('each simulated map region carries at least one reusable hidden egg', () => {
-  for (const regionId of ['lakeside', 'south', 'east']) {
-    assert.ok(getTasksForRegion(regionId).some(task => task.kind === 'egg'));
+test('the nine regular tasks are split into three map regions with recurring eggs', () => {
+  const regionIds = Object.keys(REGIONS);
+  assert.equal(regionIds.length, 3);
+  for (const regionId of regionIds) {
+    const tasks = getTasksForRegion(regionId);
+    assert.equal(tasks.filter(task => task.kind === 'task').length, 3);
+    assert.equal(tasks.filter(task => task.kind === 'egg').length, 2);
   }
 });
 

@@ -7,7 +7,7 @@ export const REGIONS = Object.freeze({
     id: 'lakeside',
     area: 'Lakeside',
     areaZh: '湖畔区',
-    mapZones: ['Pet Zone', 'Gardening Zone', 'Touch Spot', 'Drawing Zone', 'Kids Zone']
+    mapZones: ['Pet Zone', 'Gardening Zone', 'Touch Spot']
   },
   south: {
     id: 'south',
@@ -19,7 +19,7 @@ export const REGIONS = Object.freeze({
     id: 'east',
     area: 'Discovery Garden',
     areaZh: '探索花园',
-    mapZones: ['VR Zone', 'Information Centre']
+    mapZones: ['VR Zone', 'Drawing Zone', 'Kids Zone']
   }
 });
 
@@ -75,9 +75,9 @@ export const TASKS = Object.freeze({
   'tree-hug': {
     id: 'tree-hug',
     kind: 'task',
-    regionId: DEFAULT_REGION_ID,
-    area: 'Gardening Zone',
-    areaZh: '花园区',
+    regionId: 'south',
+    area: 'Rest Zone',
+    areaZh: '休息区',
     title: 'Hug a Big Tree',
     titleZh: '抱抱大树',
     instruction: 'Find a big tree and give it a gentle team hug.',
@@ -91,7 +91,7 @@ export const TASKS = Object.freeze({
   concert: {
     id: 'concert',
     kind: 'task',
-    regionId: DEFAULT_REGION_ID,
+    regionId: 'south',
     area: 'Amphitheatre',
     areaZh: '音乐剧场',
     title: "Hear Momo-san's Little Concert",
@@ -107,7 +107,7 @@ export const TASKS = Object.freeze({
   'tree-rest': {
     id: 'tree-rest',
     kind: 'task',
-    regionId: DEFAULT_REGION_ID,
+    regionId: 'south',
     area: 'Rest Zone',
     areaZh: '休息区',
     title: 'Rest Under a Big Tree',
@@ -123,7 +123,7 @@ export const TASKS = Object.freeze({
   vr: {
     id: 'vr',
     kind: 'task',
-    regionId: DEFAULT_REGION_ID,
+    regionId: 'east',
     area: 'VR Zone',
     areaZh: 'VR体验区',
     title: 'Try a VR Adventure',
@@ -139,7 +139,7 @@ export const TASKS = Object.freeze({
   'plant-drawing': {
     id: 'plant-drawing',
     kind: 'task',
-    regionId: DEFAULT_REGION_ID,
+    regionId: 'east',
     area: 'Drawing Zone',
     areaZh: '绘画区',
     title: 'Draw a Little Plant',
@@ -155,7 +155,7 @@ export const TASKS = Object.freeze({
   seesaw: {
     id: 'seesaw',
     kind: 'task',
-    regionId: DEFAULT_REGION_ID,
+    regionId: 'east',
     area: 'Kids Zone',
     areaZh: '儿童区',
     title: 'Play Seesaw Together',
@@ -173,7 +173,7 @@ export const TASKS = Object.freeze({
 const EGG_REGIONS = Object.values(REGIONS);
 export const EGG_TASKS = Object.freeze(Object.fromEntries(
   EGG_REGIONS.flatMap((region, index) => {
-    const count = region.id === DEFAULT_REGION_ID ? 2 : 1;
+    const count = 2;
     return Array.from({ length: count }, (_, eggIndex) => {
       const id = `egg-${region.id}-${eggIndex + 1}`;
       return [id, {

@@ -81,6 +81,7 @@ let renderedScreen = null;
 let ritual = null;
 let ritualTimer = null;
 let ritualToken = 0;
+let regionPickerOpen = false;
 const root = document.querySelector('#app');
 const notice = document.querySelector('#notice');
 const languageSelect = document.querySelector('#language-select');
@@ -99,6 +100,11 @@ function activeOrSelectedTask() { return ALL_TASKS[state.activeTaskId || state.s
 function currentRegion() { return REGIONS[state.currentRegionId]; }
 function currentRegionIsUnlocked() { return state.unlockedRegionIds.includes(state.currentRegionId); }
 function taskLabel(task) { return task.kind === 'egg' ? words().eggTask : taskTitle(task); }
+function regionName(region) { return state.language === 'zh' ? region.areaZh : region.area; }
+function regionPickerMarkup() {
+  if (!regionPickerOpen) return '';
+  return `<div class="region-picker" role="list" aria-label="区域选择">${Object.values(REGIONS).map(region => `<button type="button" class="region-picker-button ${region.id === state.currentRegionId ? 'active' : ''}" data-action="change-region" data-region-id="${region.id}" role="listitem">${regionName(region)}</button>`).join('')}</div>`;
+}
 function devOnly(markup) { return state.devMode ? `<details class="demo-panel" open><summary>${words().demoTools}</summary>${markup}</details>` : ''; }
 function logoMarkup(className = '') {
   return `<img class="brand-logo ${className}" src="./assets/branding/logo.png" alt="">`;
@@ -363,20 +369,20 @@ function homeMarkup() {
       <span class="task-card-icon">${icon(task.icon)}</span><strong>${taskLabel(task)}</strong><small>+${task.points} ${t.points}</small>
     </button>`;
   }).join('');
-  const regionPicker = devOnly(`<label class="demo-region-picker">区域<select data-action="set-region">${Object.values(REGIONS).map(region => `<option value="${region.id}" ${region.id === state.currentRegionId ? 'selected' : ''}>${state.language === 'zh' ? region.areaZh : region.area}</option>`).join('')}</select></label>`);
   const interaction = currentRegionIsUnlocked()
     ? `<h3 class="nearby-title">${icon('locate')}${t.nearby}</h3>
-       <div class="task-scatter">${taskButtons}</div>${regionPicker}`
+       <div class="task-scatter">${taskButtons}</div>`
     : `<button class="region-unlock" data-action="unlock-region">
          <span class="region-unlock-roles">${roleAsset('sun', 'unlock-sun')}${roleAsset('moon', 'unlock-moon')}</span>
          <strong>${t.unlockArea}</strong>
          <small>${t.unlockAreaHint}</small>
-       </button>${regionPicker}`;
+       </button>`;
   const region = currentRegion();
   return `<section class="home-screen">
     <section class="info-zone">
       <div class="area-line">${roleAsset('sun', 'home-sun')}<span>${t.activity}</span></div>
-      <h2 class="area-title">${state.language === 'zh' ? region.areaZh : region.area}</h2>
+      <h2 class="area-title"><button type="button" class="area-title-button" data-action="toggle-region-picker" aria-expanded="${regionPickerOpen}"><span>${regionName(region)}</span>${icon('arrow', 'region-title-arrow')}</button></h2>
+      ${regionPickerMarkup()}
       <span class="update-pill">${icon('check')} ${t.updated} · ${MOCK_OUTDOOR_STATUS.updatedAt}</span>
       <div class="status-row">
         <div class="status-blob">${icon('thermometer')}<span><strong>${MOCK_OUTDOOR_STATUS.temperatureCelsius}°</strong><small>${t.temp}</small></span></div>
@@ -629,6 +635,18 @@ root.addEventListener('click', event => {
   if (!control) return;
   const action = control.dataset.action;
   clearNotice();
+  if (action === 'toggle-region-picker') {
+    regionPickerOpen = !regionPickerOpen;
+    render();
+    return;
+  }
+  if (action === 'change-region') {
+    stopDetector();
+    regionPickerOpen = false;
+    state = setCurrentRegion(state, control.dataset.regionId);
+    render();
+    return;
+  }
   if (action === 'start') {
     state = startActivity(state);
     render();
@@ -658,9 +676,9 @@ root.addEventListener('click', event => {
   if (action === 'simulate-region') performSimulatedScan('region');
   if (action === 'simulate-task') performSimulatedScan('task');
   if (action === 'simulate-star') performSimulatedScan('star');
-  if (action === 'view-map') { stopDetector(); state = openMapBackup(state); }
-  if (action === 'sky') { stopDetector(); state = showSky(state); }
-  if (action === 'home') { stopDetector(); state = goHome(state); }
+  if (action === 'view-map') { stopDetector(); regionPickerOpen = false; state = openMapBackup(state); }
+  if (action === 'sky') { stopDetector(); regionPickerOpen = false; state = showSky(state); }
+  if (action === 'home') { stopDetector(); regionPickerOpen = false; state = goHome(state); }
   if (action === 'reset') { stopRitual(); stopDetector(); state = createInitialState(); }
   render();
 });
@@ -691,6 +709,7 @@ homeButton.addEventListener('click', () => {
   stopRitual();
   stopDetector();
   state = goHome(state);
+  regionPickerOpen = false;
   clearNotice();
   render();
 });

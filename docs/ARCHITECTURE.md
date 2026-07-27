@@ -31,6 +31,8 @@ The detector's pure heading and sustained-readiness calculations live in `src/de
 
 `src/tasks.js` holds the map regions, regular tasks, recurring per-region egg instances, simulated outdoor status, and local mock community data. `assets/illustrations`, `assets/fonts`, and `assets/icons` contain the production visual assets used by the static interface. Add future tasks in `src/tasks.js` and extend state tests with any workflow change.
 
+The prototype does not use GPS to change regions. On Home, the visible area title opens a small region switcher for demonstrations; changing regions clears only the active task and requires the normal Moon scan for that region.
+
 ## Testing
 
 Node's built-in test runner checks pure transitions, detector readiness, ritual phases, and NFC capability detection. Browser checks cover rendering and the simulated activity flow. Physical NFC and device orientation need manual Android testing.
