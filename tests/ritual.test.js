@@ -4,6 +4,7 @@ import {
   beginRitual,
   failRitual,
   finishRitual,
+  ritualExitDuration,
   succeedRitual
 } from '../src/ritual.js';
 
@@ -13,12 +14,18 @@ test('a ritual moves from scanning to success and complete', () => {
 
   assert.equal(scanning.phase, 'scanning');
   assert.equal(success.phase, 'success');
-  assert.equal(success.duration, 3300);
+  assert.equal(success.duration, 4400);
   assert.equal(finishRitual(success).phase, 'complete');
 });
 
 test('reduced motion uses the short confirmation duration', () => {
-  assert.equal(succeedRitual(beginRitual('star'), true).duration, 550);
+  assert.equal(succeedRitual(beginRitual('star'), true).duration, 700);
+  assert.equal(ritualExitDuration(true), 220);
+});
+
+test('the final success frame holds before a soft page reveal', () => {
+  assert.equal(succeedRitual(beginRitual('star'), false).duration, 5000);
+  assert.equal(ritualExitDuration(false), 650);
 });
 
 test('failed scans never enter success', () => {

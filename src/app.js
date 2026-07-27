@@ -17,12 +17,13 @@ import {
   beginRitual,
   failRitual,
   finishRitual,
+  ritualExitDuration,
   succeedRitual
 } from './ritual.js';
 
 const TEXT = {
   en: {
-    activity: 'DAHU PARK', title: 'Sun & Moon', unavailable: 'NFC needs Android Chrome and an NFC-enabled phone.',
+    activity: 'DAHU PARK', title: 'Moving Memories', unavailable: 'NFC needs Android Chrome and an NFC-enabled phone.',
     nfcError: 'NFC is not available in this browser.', hello: 'Explore together', start: 'Start',
     pairing: 'Meet your Moon', scanMoon: 'Scan Moon', scanMoonHint: 'Hold the Moon necklace near the phone.',
     profile: 'Moon profile', callName: 'Call me', likes: 'Likes', introduce: 'Your turn',
@@ -33,7 +34,7 @@ const TEXT = {
     currentStar: 'Star task', detector: 'Find task', detectorNext: 'Next', scanStar: 'Collect Star',
     scanStarHint: 'Hold the Star badge near the phone.',
     signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!', signalReady: 'Ready',
-    sensorFallback: 'Compass unavailable. Scan the Star directly.',
+    sensorFallback: 'Compass unavailable. Continue to the next step.',
     sky: 'Our sky', parkMap: 'Backup map',
     community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
     testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
@@ -42,7 +43,7 @@ const TEXT = {
     arrivalSuccess: 'Task unlocked!', taskReady: 'Details ready', starSuccess: 'Star collected!', intoSky: 'Added to our sky'
   },
   zh: {
-    activity: '大濠公园', title: '太阳与月亮', unavailable: 'NFC 需要使用支持 NFC 的 Android Chrome 手机。',
+    activity: '大濠公园', title: 'Moving Memories', unavailable: 'NFC 需要使用支持 NFC 的 Android Chrome 手机。',
     nfcError: '此浏览器暂时不能使用 NFC。', hello: '一起出发吧', start: '开始',
     pairing: '认识月亮', scanMoon: '扫描月亮', scanMoonHint: '把月亮项链贴近手机。',
     profile: '月亮名片', callName: '请叫我', likes: '我喜欢', introduce: '轮到太阳',
@@ -53,7 +54,7 @@ const TEXT = {
     currentStar: '星星任务', detector: '寻找任务', detectorNext: '下一步', scanStar: '收获星星',
     scanStarHint: '把星星勋章贴近手机。',
     signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！', signalReady: '可以扫描',
-    sensorFallback: '方向感应不可用，请直接扫描星星。',
+    sensorFallback: '方向感应不可用，请直接进入下一步。',
     sky: '我们的星空', parkMap: '备用地图',
     community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
     testHeading: '测试方向', scanningMoon: '正在感应月亮…',
@@ -183,7 +184,7 @@ function playSignalTone(strength) {
   oscillator.stop(audioContext.currentTime + 0.13);
 }
 
-function playTone(frequency, delay = 0, duration = 0.18) {
+function playTone(frequency, delay = 0, duration = 0.18, volume = 0.055) {
   if (!audioContext || audioContext.state !== 'running') return;
   const startsAt = audioContext.currentTime + delay;
   const oscillator = audioContext.createOscillator();
@@ -191,7 +192,7 @@ function playTone(frequency, delay = 0, duration = 0.18) {
   oscillator.type = 'sine';
   oscillator.frequency.value = frequency;
   gain.gain.setValueAtTime(0.0001, startsAt);
-  gain.gain.exponentialRampToValueAtTime(0.055, startsAt + 0.02);
+  gain.gain.exponentialRampToValueAtTime(volume, startsAt + 0.02);
   gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + duration);
   oscillator.connect(gain).connect(audioContext.destination);
   oscillator.start(startsAt);
@@ -202,12 +203,13 @@ function playRitualFeedback(kind) {
   prepareAudio();
   if (kind === 'star') {
     if (navigator.vibrate) navigator.vibrate([55, 70, 85]);
-    playTone(620, 0, 0.2);
-    playTone(880, 0.2, 0.24);
+    playTone(620, 0, 0.22, 0.12);
+    playTone(880, 0.18, 0.3, 0.14);
     return;
   }
   if (navigator.vibrate) navigator.vibrate(75);
-  playTone(720, 0, 0.25);
+  playTone(660, 0, 0.25, 0.14);
+  playTone(880, 0.14, 0.3, 0.13);
 }
 
 function stopRitual() {
@@ -216,6 +218,7 @@ function stopRitual() {
   ritualTimer = null;
   ritual = null;
   scanning = false;
+  root.querySelector('.ritual-overlay')?.remove();
   if (navigator.vibrate) navigator.vibrate(0);
 }
 
@@ -239,11 +242,22 @@ function showSuccessfulRitual(kind) {
   render();
   ritualTimer = window.setTimeout(() => {
     if (token !== ritualToken) return;
+    const overlay = root.querySelector('.ritual-overlay');
+    const exitDuration = ritualExitDuration(reducedMotion);
     ritual = finishRitual(ritual);
     applySuccessfulScan(kind);
-    ritual = null;
-    ritualTimer = null;
-    render();
+    render({ preserveRitualOverlay: true });
+    if (overlay) {
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.style.setProperty('--ritual-exit-duration', `${exitDuration}ms`);
+      requestAnimationFrame(() => overlay.classList.add('is-leaving'));
+    }
+    ritualTimer = window.setTimeout(() => {
+      if (token !== ritualToken) return;
+      overlay?.remove();
+      ritual = null;
+      ritualTimer = null;
+    }, exitDuration);
   }, ritual.duration);
 }
 
@@ -307,9 +321,9 @@ function welcomeMarkup() {
   const t = words();
   return `<section class="screen welcome-screen"><div class="content">
     ${logoMarkup('welcome-logo')}
-    <p class="eyebrow">${t.activity}</p>
+    <h1 class="welcome-title">${t.title}</h1>
     <h2>${t.hello}</h2>
-    <div class="image-sticker welcome-image"><img src="./assets/illustrations/welcome-pair.png" alt=""></div>
+    <div class="welcome-sun">${roleAsset('sun', 'welcome-sun-art')}</div>
     <button class="primary-button" data-action="start">${icon('sparkle')}${t.start}${icon('arrow')}</button>
   </div></section>`;
 }
@@ -529,7 +543,17 @@ function ritualMarkup() {
   </section>`;
 }
 
-function render() {
+function currentScreenMarkup() {
+  const screens = {
+    welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup,
+    'region-scan': regionScanMarkup, 'task-scan': taskScanMarkup, 'map-view': mapViewMarkup,
+    task: taskMarkup, detector: detectorMarkup,
+    sky: skyMarkup
+  };
+  return screens[state.screen]();
+}
+
+function render({ preserveRitualOverlay = false } = {}) {
   const t = words();
   const screenChanged = renderedScreen !== state.screen;
   renderedScreen = state.screen;
@@ -543,13 +567,15 @@ function render() {
   homeButton.setAttribute('aria-label', t.nearby);
   homeButton.title = t.nearby;
   homeButton.hidden = !state.paired || state.screen === 'home';
-  const screens = {
-    welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup,
-    'region-scan': regionScanMarkup, 'task-scan': taskScanMarkup, 'map-view': mapViewMarkup,
-    task: taskMarkup, detector: detectorMarkup,
-    sky: skyMarkup
-  };
-  root.innerHTML = screens[state.screen]() + ritualMarkup();
+  if (preserveRitualOverlay) {
+    const overlay = root.querySelector('.ritual-overlay');
+    [...root.children].forEach(child => {
+      if (child !== overlay) child.remove();
+    });
+    root.insertAdjacentHTML('afterbegin', currentScreenMarkup());
+  } else {
+    root.innerHTML = currentScreenMarkup() + ritualMarkup();
+  }
   if (screenChanged) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
 }
 

@@ -209,7 +209,6 @@ h3 { font-size: 19px; line-height: 1.2; }
   background: var(--white);
 }
 .image-sticker img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.welcome-image { aspect-ratio: 1.33; }
 .profile-image { aspect-ratio: 1.2; }
 .task-image { aspect-ratio: 1.45; }
 .map-image { aspect-ratio: .72; }
@@ -244,8 +243,25 @@ h3 { font-size: 19px; line-height: 1.2; }
 .actions { display: flex; flex-wrap: wrap; gap: 11px; justify-content: center; }
 
 .welcome-screen .content { align-content: center; min-height: calc(100dvh - 180px); text-align: center; }
+.welcome-title {
+  margin: 0;
+  color: var(--ink);
+  font: 900 clamp(30px, 9vw, 42px)/1.05 "Nunito", sans-serif;
+}
 .welcome-screen h2 { color: var(--teal-dark); }
-.welcome-screen .image-sticker { transform: rotate(-1deg); }
+.welcome-sun {
+  display: grid;
+  width: min(68vw, 285px);
+  aspect-ratio: 1;
+  margin: -2px auto;
+  place-items: center;
+}
+.welcome-sun-art {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 5px 0 rgba(53, 84, 90, .12));
+  transform: rotate(-4deg);
+}
 
 .nfc-orbit {
   position: relative;
@@ -292,6 +308,10 @@ h3 { font-size: 19px; line-height: 1.2; }
     linear-gradient(rgba(81, 150, 133, .07) 1px, transparent 1px),
     linear-gradient(90deg, rgba(81, 150, 133, .07) 1px, transparent 1px);
   background-size: 44px 44px;
+}
+.ritual-overlay.is-leaving {
+  pointer-events: none;
+  animation: ritual-overlay-leave var(--ritual-exit-duration, 650ms) ease-in forwards;
 }
 
 .ritual-stage { position: relative; width: 100%; height: 100dvh; min-height: 620px; }
@@ -660,6 +680,10 @@ h3 { font-size: 19px; line-height: 1.2; }
   100% { opacity: .78; transform: scale(1) rotate(8deg); }
 }
 @keyframes ritual-result-in { to { opacity: 1; transform: none; } }
+@keyframes ritual-overlay-leave {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
 @keyframes ritual-sky-open { to { opacity: 1; transform: scaleY(1); } }
 @keyframes ritual-star-arrive {
   0% { opacity: 0; transform: translate(-50%, -75%) scale(.2) rotate(-20deg); }

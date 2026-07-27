@@ -1,8 +1,8 @@
 const DURATIONS = Object.freeze({
-  pair: 3300,
-  region: 3300,
-  task: 3300,
-  star: 3600
+  pair: 4400,
+  region: 4400,
+  task: 4400,
+  star: 5000
 });
 
 const KINDS = new Set(Object.keys(DURATIONS));
@@ -16,8 +16,12 @@ export function succeedRitual(ritual, reducedMotion) {
   return {
     ...ritual,
     phase: 'success',
-    duration: reducedMotion ? 550 : DURATIONS[ritual.kind]
+    duration: reducedMotion ? 700 : DURATIONS[ritual.kind]
   };
+}
+
+export function ritualExitDuration(reducedMotion) {
+  return reducedMotion ? 220 : 650;
 }
 
 export function failRitual(ritual) {
