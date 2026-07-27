@@ -526,7 +526,8 @@ h3 { font-size: 19px; line-height: 1.2; }
   background: #a8d5a0;
   animation: arrival-task-pop .55s cubic-bezier(.2, 1.4, .4, 1) 2.28s forwards;
 }
-.arrival-task > .icon { color: var(--teal-dark); font-size: 30px; }
+.arrival-task > .icon,
+.arrival-task-icon .icon { color: var(--teal-dark); font-size: 30px; }
 .arrival-region-tasks { max-width: 68%; }
 .region-discovery-icons { display: inline-flex; gap: 4px; color: var(--teal-dark); font-size: 26px; }
 .ritual-arrival .ritual-result { animation-delay: 2.7s; }
@@ -1028,6 +1029,16 @@ h3 { font-size: 19px; line-height: 1.2; }
   transform: translateX(-50%) rotate(-1deg);
   white-space: nowrap;
 }
+.task-scan-panel .task-icon-only {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  padding: 10px;
+  place-items: center;
+  border-radius: 48% 52% 46% 54%;
+  background: var(--yellow);
+}
+.task-scan-panel .task-icon-only .icon { font-size: 38px; color: var(--teal-dark); }
 .egg-scan-screen .content { gap: 16px; }
 .egg-scan-panel {
   display: grid;

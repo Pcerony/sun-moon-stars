@@ -457,7 +457,7 @@ function taskScanMarkup() {
       ${roleAsset('sun', 'scan-sun')}
       ${roleAsset('moon', 'scan-moon')}
       <span class="scan-link">${icon('nfc')}</span>
-      <span class="task-chip">${icon(task.icon)}${taskTitle(task)}</span>
+      <span class="task-chip task-icon-only" aria-label="${t.taskScan}">${icon(task.icon)}</span>
     </div>
     <button class="primary-button" data-action="scan-task">${icon('nfc')}${t.scanMoon}</button>
     ${devOnly(`<button class="secondary-button" data-action="simulate-task">${icon('nfc')}${t.demoScan}</button>`)}
@@ -473,7 +473,7 @@ function detectorMarkup() {
     : normalizeAngle(75 - normalizeAngle(heading - detectorStartHeading));
   const task = activeOrSelectedTask();
   return `<section class="screen detector-screen"><div class="content">
-    <p class="eyebrow">${t.detector}</p><h2>${taskLabel(task)}</h2>
+    <p class="eyebrow">${t.detector}</p><h2>${t.detector}</h2>
     <div class="detector ${detectorReadiness.ready ? 'is-ready' : ''}" style="--signal:${strength}; --target-angle:${rotation}deg; --counter-angle:${-rotation}deg; --star-scale:${0.74 + strength * 0.34}">
       <div class="signal-rings"><i></i><i></i><i></i></div>
       <div class="target-track"><span class="detector-task-icon">${icon(task.icon)}</span></div>
@@ -542,7 +542,7 @@ function ritualMarkup() {
       : taskArea(task);
     const discovery = isRegion
       ? `<span class="region-discovery-icons">${regionTasks.slice(0, 7).map(item => icon(item.icon)).join('')}</span><strong>${regionTasks.length} ${t.nearby}</strong>`
-      : `${icon(task.icon)}<strong>${taskLabel(task)}</strong>`;
+      : `<span class="arrival-task-icon">${icon(task.icon)}</span>`;
     return `<section class="ritual-overlay ritual-arrival is-success" role="status" aria-live="assertive">
       <div class="ritual-stage">
         <div class="arrival-sky" aria-hidden="true"><i></i><i></i><i></i></div>
