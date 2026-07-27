@@ -1,6 +1,7 @@
 const DURATIONS = Object.freeze({
   pair: 3300,
-  moon: 3300,
+  region: 3300,
+  task: 3300,
   star: 3600
 });
 

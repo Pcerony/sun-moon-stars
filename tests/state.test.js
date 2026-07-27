@@ -1,34 +1,54 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  activateMoon,
+  beginRegionScan,
+  completeDetector,
   completeWithStar,
   confirmPair,
   createInitialState,
-  pairWithMoon,
-  openDetector,
-  openMap,
-  openMapBackup,
   goHome,
+  openMapBackup,
   openNearbyTask,
-  selectDemoTask,
+  pairWithMoon,
   setLanguage,
-  toggleDevMode
+  showSky,
+  startActivity,
+  toggleDevMode,
+  unlockRegion,
+  unlockTask
 } from '../src/state.js';
 
-test('starts with no active task and no score', () => {
+const PROFILE = { name: 'Aki', callName: 'Aki', likes: 'dogs' };
+
+function pairedState() {
+  return confirmPair(pairWithMoon(startActivity(createInitialState()), PROFILE));
+}
+
+function regionState() {
+  return unlockRegion(beginRegionScan(pairedState()));
+}
+
+test('starts with the activity region and tasks locked', () => {
   assert.deepEqual(createInitialState(), {
-    selectedTaskId: 'dog',
+    selectedTaskId: null,
     language: 'zh',
     devMode: false,
     paired: false,
     moonProfile: null,
-    moonScanned: false,
+    regionUnlocked: false,
     activeTaskId: null,
     completedTaskIds: [],
     score: 0,
     screen: 'welcome'
   });
+});
+
+test('starts pairing before accepting a Moon profile', () => {
+  assert.equal(startActivity(createInitialState()).screen, 'pairing');
+  const introduced = pairWithMoon(startActivity(createInitialState()), PROFILE);
+  assert.equal(introduced.screen, 'introduction');
+  assert.deepEqual(introduced.moonProfile, PROFILE);
+  assert.equal(confirmPair(introduced).screen, 'home');
 });
 
 test('reveals test controls only when developer mode is toggled', () => {
@@ -37,95 +57,81 @@ test('reveals test controls only when developer mode is toggled', () => {
   assert.equal(toggleDevMode(state).devMode, false);
 });
 
-test('switches between English and Chinese without changing activity progress', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
-  const state = setLanguage(activateMoon(paired), 'zh');
-  assert.equal(state.language, 'zh');
-  assert.equal(state.activeTaskId, 'dog');
+test('switches language without changing progress', () => {
+  const state = setLanguage(regionState(), 'en');
+  assert.equal(state.language, 'en');
+  assert.equal(state.regionUnlocked, true);
 });
 
-test('a Moon scan activates the selected task', () => {
-  const initial = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
-  const state = activateMoon(initial);
-  assert.equal(state.activeTaskId, 'dog');
-  assert.equal(state.screen, 'task');
+test('a paired team can scan Moon to unlock the current region', () => {
+  const scanning = beginRegionScan(pairedState());
+  assert.equal(scanning.screen, 'region-scan');
+
+  const unlocked = unlockRegion(scanning);
+  assert.equal(unlocked.regionUnlocked, true);
+  assert.equal(unlocked.screen, 'home');
 });
 
-test('an active task can enter the Star detector', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
-  const detector = openDetector(activateMoon(paired));
-  assert.equal(detector.screen, 'detector');
+test('tasks cannot open before the current region is unlocked', () => {
+  const paired = pairedState();
+  assert.deepEqual(openNearbyTask(paired, 'dog'), paired);
 });
 
-test('a paired team returns to the home screen and can open the map', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
-  assert.equal(paired.screen, 'home');
-  assert.equal(openMap(paired).screen, 'map');
-  assert.equal(openMapBackup(paired).screen, 'map-view');
-  assert.equal(goHome(openMap(paired)).screen, 'home');
+test('selecting a discovered task opens its detector', () => {
+  const state = openNearbyTask(regionState(), 'flowers');
+  assert.equal(state.selectedTaskId, 'flowers');
+  assert.equal(state.screen, 'detector');
+  assert.equal(state.activeTaskId, null);
 });
 
-test('a nearby task opens its paper-map prompt', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), {
-    name: 'Aki',
-    callName: 'Aki',
-    likes: 'gardening'
-  }));
+test('finishing detection asks for Moon before revealing task details', () => {
+  const detector = openNearbyTask(regionState(), 'dog');
+  const scanning = completeDetector(detector);
+  assert.equal(scanning.screen, 'task-scan');
+  assert.equal(scanning.activeTaskId, null);
 
-  const next = openNearbyTask(paired, 'flowers');
-
-  assert.equal(next.selectedTaskId, 'flowers');
-  assert.equal(next.screen, 'map');
+  const task = unlockTask(scanning);
+  assert.equal(task.screen, 'task');
+  assert.equal(task.activeTaskId, 'dog');
 });
 
-test('a completed nearby task cannot be reopened', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), {
-    name: 'Aki',
-    callName: 'Aki',
-    likes: 'dogs'
-  }));
-  const complete = completeWithStar(activateMoon(paired));
-
-  assert.deepEqual(openNearbyTask(complete, 'dog'), complete);
-});
-
-test('an active nearby task can be resumed after viewing another screen', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), {
-    name: 'Aki',
-    callName: 'Aki',
-    likes: 'dogs'
-  }));
-  const active = goHome(activateMoon(paired));
-
-  assert.equal(openNearbyTask(active, 'dog').screen, 'task');
-});
-
-test('a Star scan completes the active task exactly once', () => {
-  const initial = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
-  const active = activateMoon(initial);
+test('a Star scan completes the active task exactly once and returns home', () => {
+  const detector = openNearbyTask(regionState(), 'dog');
+  const active = unlockTask(completeDetector(detector));
   const complete = completeWithStar(active);
+
   assert.deepEqual(complete.completedTaskIds, ['dog']);
   assert.equal(complete.score, 10);
   assert.equal(complete.screen, 'home');
+  assert.equal(complete.activeTaskId, null);
+  assert.equal(complete.selectedTaskId, null);
   assert.deepEqual(completeWithStar(complete), complete);
 });
 
-test('demo task selection changes the next task before Moon activation', () => {
-  const paired = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
-  const state = selectDemoTask(paired, 'flowers');
-  assert.equal(activateMoon(state).activeTaskId, 'flowers');
+test('an unlocked task can resume its detail page after returning home', () => {
+  const active = unlockTask(completeDetector(openNearbyTask(regionState(), 'dog')));
+  const home = goHome(active);
+  assert.equal(openNearbyTask(home, 'dog').screen, 'task');
 });
 
-test('a Star scan without an active task changes nothing', () => {
-  const state = createInitialState();
-  assert.deepEqual(completeWithStar(state), state);
+test('a completed task cannot be reopened', () => {
+  const active = unlockTask(completeDetector(openNearbyTask(regionState(), 'dog')));
+  const complete = completeWithStar(active);
+  assert.deepEqual(openNearbyTask(complete, 'dog'), complete);
 });
 
-test('a Moon profile must be confirmed before collecting a task', () => {
-  const profile = { name: 'Aki', callName: 'Aki-san', likes: 'gardening' };
-  const introduced = pairWithMoon(createInitialState(), profile);
-  assert.deepEqual(introduced.moonProfile, profile);
-  assert.equal(introduced.screen, 'introduction');
-  assert.equal(activateMoon(introduced), introduced);
-  assert.equal(confirmPair(introduced).screen, 'home');
+test('invalid transitions do not unlock content or award points', () => {
+  const initial = createInitialState();
+  assert.deepEqual(beginRegionScan(initial), initial);
+  assert.deepEqual(unlockRegion(initial), initial);
+  assert.deepEqual(completeDetector(initial), initial);
+  assert.deepEqual(unlockTask(initial), initial);
+  assert.deepEqual(completeWithStar(initial), initial);
+});
+
+test('paired teams can open Home, the backup map, and the shared sky', () => {
+  const paired = pairedState();
+  assert.equal(goHome(paired).screen, 'home');
+  assert.equal(openMapBackup(paired).screen, 'map-view');
+  assert.equal(showSky(paired).screen, 'sky');
 });

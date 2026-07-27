@@ -22,11 +22,16 @@ test('reduced motion uses the short confirmation duration', () => {
 });
 
 test('failed scans never enter success', () => {
-  assert.deepEqual(failRitual(beginRitual('moon')), {
-    kind: 'moon',
+  assert.deepEqual(failRitual(beginRitual('region')), {
+    kind: 'region',
     phase: 'error',
     duration: 0
   });
+});
+
+test('region discovery and task unlocking are separate Moon rituals', () => {
+  assert.equal(beginRitual('region').kind, 'region');
+  assert.equal(beginRitual('task').kind, 'task');
 });
 
 test('unknown ritual kinds are rejected', () => {

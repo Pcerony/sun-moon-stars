@@ -9,9 +9,12 @@ The app is a dependency-free static site. It runs from `index.html` and ES modul
 `src/state.js` owns the activity workflow:
 
 ```text
-welcome -> pairing scan -> introduction -> home -> map -> task -> detector -> home
-                                            |
-                                            +-------- map backup
+welcome -> pairing scan -> introduction -> locked home
+  -> region Moon scan -> discovered home
+  -> task detector -> task Moon scan -> task details
+  -> Star scan -> discovered home
+
+Any paired screen -> backup map
 ```
 
 The home screen and header home button let a paired team leave any feature page without losing their accumulated score or collected Stars.
@@ -20,9 +23,9 @@ The home screen and header home button let a paired team leave any feature page 
 
 `src/nfc.js` isolates the Web NFC API. NFC scans begin from explicit user actions and fall back to hidden simulation controls for development. The app must be served over HTTPS for Web NFC on Android Chrome.
 
-The detector's pure heading and sustained-readiness calculations live in `src/detector.js`. `src/app.js` owns the transient sensor listener, vibration, generated Web Audio tone, and rendering. Entering the detector starts sensing immediately; a Star NFC action appears only after a near signal is sustained. It is not a real geospatial guidance system.
+The detector's pure heading and sustained-readiness calculations live in `src/detector.js`. `src/app.js` owns the transient sensor listener, vibration, generated Web Audio tone, and rendering. Selecting a discovered task starts sensing immediately; a Next action appears only after a near signal is sustained. Leaving the detector always stops sensing, vibration, and future detector tones. It is not a real geospatial guidance system.
 
-`src/ritual.js` distinguishes three NFC results: first partner pairing, arrival at a task area, and shared Star collection. Workflow state changes only after the matching success ritual finishes. Star completion returns directly to Home.
+`src/ritual.js` distinguishes four NFC results: first partner pairing, region discovery, task-detail unlocking, and shared Star collection. Workflow state changes only after the matching success ritual finishes. Star collection starts from the task detail screen, when the detector is no longer active, and returns directly to Home.
 
 ## Content
 

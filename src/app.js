@@ -1,9 +1,9 @@
 import { COMMUNITY_TEAMS, MOCK_OUTDOOR_STATUS, TASKS } from './tasks.js';
 import { icon } from './icons.js';
 import {
-  activateMoon, completeWithStar, confirmPair, createInitialState,
-  goHome, openDetector, openMapBackup, openNearbyTask, pairWithMoon, selectDemoTask, setLanguage,
-  showSky, startActivity, toggleDevMode
+  beginRegionScan, completeDetector, completeWithStar, confirmPair, createInitialState,
+  goHome, openMapBackup, openNearbyTask, pairWithMoon, setLanguage,
+  showSky, startActivity, toggleDevMode, unlockRegion, unlockTask
 } from './state.js';
 import {
   createReadiness,
@@ -28,16 +28,18 @@ const TEXT = {
     profile: 'Moon profile', callName: 'Call me', likes: 'Likes', introduce: 'Your turn',
     introHint: 'Say your name and one thing you like.', met: 'Ready',
     nearby: 'Nearby', lakeArea: 'Lakeside', updated: 'updated', temp: 'temperature', steps: 'steps', points: 'points',
-    paperMap: "Moon's paper map", followMoon: 'Follow the Moon', mapHint: 'Find this place together.',
-    scanToStart: 'Scan Moon', currentStar: 'Star task', detector: 'Find Star', scanStar: 'Scan Star',
+    unlockArea: 'Unlock nearby tasks', unlockAreaHint: 'Explore this area together',
+    regionScan: 'Scan this area', taskScan: 'Unlock task',
+    currentStar: 'Star task', detector: 'Find task', detectorNext: 'Next', scanStar: 'Collect Star',
     scanStarHint: 'Hold the Star badge near the phone.',
     signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!', signalReady: 'Ready',
     sensorFallback: 'Compass unavailable. Scan the Star directly.',
     sky: 'Our sky', parkMap: 'Backup map',
     community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
-    demoLocation: 'Task', testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
+    testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
     scanningStar: 'Listening for a Star…', pairSuccess: 'Partners!', together: 'Let’s go together',
-    arrivalSuccess: 'We are here!', taskReady: 'Task found', starSuccess: 'Star collected!', intoSky: 'Added to our sky'
+    regionSuccess: 'Tasks discovered!', regionReady: 'Back to the area',
+    arrivalSuccess: 'Task unlocked!', taskReady: 'Details ready', starSuccess: 'Star collected!', intoSky: 'Added to our sky'
   },
   zh: {
     activity: '大濠公园', title: '太阳与月亮', unavailable: 'NFC 需要使用支持 NFC 的 Android Chrome 手机。',
@@ -46,16 +48,18 @@ const TEXT = {
     profile: '月亮名片', callName: '请叫我', likes: '我喜欢', introduce: '轮到太阳',
     introHint: '说出你的名字和一件喜欢的事。', met: '准备好了',
     nearby: '附近任务', lakeArea: '湖畔区', updated: '刚刚更新', temp: '温度', steps: '步数', points: '积分',
-    paperMap: '月亮的纸地图', followMoon: '跟着月亮', mapHint: '一起找到这个地方。',
-    scanToStart: '扫描月亮', currentStar: '星星任务', detector: '寻找星星', scanStar: '扫描星星',
+    unlockArea: '一起解锁附近任务', unlockAreaHint: '探索这个小区域',
+    regionScan: '扫描当前区域', taskScan: '解锁任务',
+    currentStar: '星星任务', detector: '寻找任务', detectorNext: '下一步', scanStar: '收获星星',
     scanStarHint: '把星星勋章贴近手机。',
     signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！', signalReady: '可以扫描',
     sensorFallback: '方向感应不可用，请直接扫描星星。',
     sky: '我们的星空', parkMap: '备用地图',
     community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
-    demoLocation: '任务', testHeading: '测试方向', scanningMoon: '正在感应月亮…',
+    testHeading: '测试方向', scanningMoon: '正在感应月亮…',
     scanningStar: '正在感应星星…', pairSuccess: '伙伴配对成功', together: '一起出发吧',
-    arrivalSuccess: '我们到了！', taskReady: '发现任务', starSuccess: '共同收藏成功', intoSky: '已放入我们的星空'
+    regionSuccess: '发现新任务！', regionReady: '回到当前区域',
+    arrivalSuccess: '任务解锁！', taskReady: '查看任务详情', starSuccess: '共同收藏成功', intoSky: '已放入我们的星空'
   }
 };
 
@@ -101,10 +105,6 @@ function ritualAsset(name, className = '') {
 function roleAsset(name, className = '') {
   return `<img class="role-asset ${className}" src="./assets/ritual/${name}.png" alt="">`;
 }
-function taskOptions() {
-  return Object.values(TASKS).map(task => `<option value="${task.id}" ${task.id === state.selectedTaskId ? 'selected' : ''}>${taskTitle(task)}</option>`).join('');
-}
-
 function dockMarkup(active) {
   const t = words();
   return `<nav class="bottom-dock" aria-label="${t.title}">
@@ -221,7 +221,8 @@ function stopRitual() {
 
 function applySuccessfulScan(kind) {
   if (kind === 'pair') state = pairWithMoon(state, DEMO_MOON);
-  if (kind === 'moon') state = activateMoon(state);
+  if (kind === 'region') state = unlockRegion(state);
+  if (kind === 'task') state = unlockTask(state);
   if (kind === 'star') {
     stopDetector();
     state = completeWithStar(state);
@@ -338,12 +339,20 @@ function introductionMarkup() {
 
 function homeMarkup() {
   const t = words();
-  const taskButtons = Object.values(TASKS).map((task, index) => {
+  const taskButtons = Object.values(TASKS).map(task => {
     const done = state.completedTaskIds.includes(task.id);
     return `<button class="sticker-button task-${task.id}" data-action="nearby-task" data-task-id="${task.id}" ${done ? 'disabled' : ''}>
       ${icon(task.icon)}<strong>${taskTitle(task)}</strong><small>+${task.points} ${t.points}</small>
     </button>`;
   }).join('');
+  const interaction = state.regionUnlocked
+    ? `<h3 class="nearby-title">${icon('locate')}${t.nearby}</h3>
+       <div class="task-scatter">${taskButtons}</div>`
+    : `<button class="region-unlock" data-action="unlock-region">
+         <span class="region-unlock-roles">${roleAsset('sun', 'unlock-sun')}${roleAsset('moon', 'unlock-moon')}</span>
+         <strong>${t.unlockArea}</strong>
+         <small>${t.unlockAreaHint}</small>
+       </button>`;
   return `<section class="home-screen">
     <section class="info-zone">
       <div class="area-line">${roleAsset('sun', 'home-sun')}<span>${t.activity}</span></div>
@@ -356,25 +365,23 @@ function homeMarkup() {
       </div>
     </section>
     <section class="interaction-zone">
-      <h3 class="nearby-title">${icon('locate')}${t.nearby}</h3>
-      <div class="task-scatter">${taskButtons}</div>
+      ${interaction}
     </section>
     ${dockMarkup('home')}
   </section>`;
 }
 
-function mapMarkup() {
+function regionScanMarkup() {
   const t = words();
-  const task = activeOrSelectedTask();
   return `<section class="screen"><div class="content">
-    <p class="eyebrow">${t.paperMap}</p><h2>${t.followMoon}</h2>
-    <div class="paper-prompt">
-      <div class="map-role">${roleAsset('moon', 'map-moon')}${icon('map')}</div>
-      <span class="task-chip">${icon(task.icon)}${taskArea(task)}</span>
-      <p>${t.mapHint}</p>
+    <p class="eyebrow">${t.lakeArea}</p><h2>${t.regionScan}</h2>
+    <div class="moon-scan-panel region-scan-panel">
+      ${roleAsset('sun', 'scan-sun')}
+      ${roleAsset('moon', 'scan-moon')}
+      <span class="scan-link">${icon('nfc')}</span>
     </div>
-    <button class="primary-button" data-action="moon">${icon('nfc')}${t.scanToStart}</button>
-    ${devOnly(`<label>${t.demoLocation}<select data-action="select-task">${taskOptions()}</select></label><button class="secondary-button" data-action="simulate-moon">${icon('nfc')}${t.demoScan}</button>`)}
+    <button class="primary-button" data-action="scan-region">${icon('nfc')}${t.scanMoon}</button>
+    ${devOnly(`<button class="secondary-button" data-action="simulate-region">${icon('nfc')}${t.demoScan}</button>`)}
   </div>${dockMarkup('')}</section>`;
 }
 
@@ -394,7 +401,24 @@ function taskMarkup() {
     <div class="task-heading"><h2>${taskTitle(task)}</h2><span class="points-badge">${roleAsset('star', 'points-star')}+${task.points}</span></div>
     <div class="image-sticker task-image"><img src="${task.illustration}" alt=""></div>
     <p>${taskInstruction(task)}</p>
-    <button class="primary-button detector-entry" data-action="detector">${icon('detector')}<span>${t.detector}</span></button>
+    <button class="primary-button star-collect-button" data-action="star">${roleAsset('star', 'button-star')}<span>${t.scanStar}</span></button>
+    ${devOnly(`<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>`)}
+  </div>${dockMarkup('')}</section>`;
+}
+
+function taskScanMarkup() {
+  const t = words();
+  const task = activeOrSelectedTask();
+  return `<section class="screen"><div class="content">
+    <p class="eyebrow">${taskArea(task)}</p><h2>${t.taskScan}</h2>
+    <div class="moon-scan-panel task-scan-panel">
+      ${roleAsset('sun', 'scan-sun')}
+      ${roleAsset('moon', 'scan-moon')}
+      <span class="scan-link">${icon('nfc')}</span>
+      <span class="task-chip">${icon(task.icon)}${taskTitle(task)}</span>
+    </div>
+    <button class="primary-button" data-action="scan-task">${icon('nfc')}${t.scanMoon}</button>
+    ${devOnly(`<button class="secondary-button" data-action="simulate-task">${icon('nfc')}${t.demoScan}</button>`)}
   </div>${dockMarkup('')}</section>`;
 }
 
@@ -410,12 +434,12 @@ function detectorMarkup() {
     <p class="eyebrow">${t.detector}</p><h2>${taskTitle(task)}</h2>
     <div class="detector ${detectorReadiness.ready ? 'is-ready' : ''}" style="--signal:${strength}; --target-angle:${rotation}deg; --counter-angle:${-rotation}deg; --star-scale:${0.74 + strength * 0.34}">
       <div class="signal-rings"><i></i><i></i><i></i></div>
-      <div class="target-track">${roleAsset('star', 'detector-star')}</div>
+      <div class="target-track"><span class="detector-task-icon">${icon(task.icon)}</span></div>
       ${roleAsset('sun', 'detector-sun')}
       <strong class="detector-status">${signalMessage(strength)}</strong>
     </div>
-    ${detectorReadiness.ready ? `<button class="primary-button star-scan-button" data-action="star">${icon('nfc')}${t.scanStar}</button>` : ''}
-    ${devOnly(`<label>${t.testHeading}<input type="range" min="0" max="360" value="${manualHeading ?? 0}" data-action="test-heading"></label>${detectorReadiness.ready ? `<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>` : ''}`)}
+    ${detectorReadiness.ready ? `<button class="primary-button detector-next-button" data-action="detector-next">${icon('arrow')}${t.detectorNext}</button>` : ''}
+    ${devOnly(`<label>${t.testHeading}<input type="range" min="0" max="360" value="${manualHeading ?? 0}" data-action="test-heading"></label>`)}
   </div>${dockMarkup('')}</section>`;
 }
 
@@ -466,8 +490,13 @@ function ritualMarkup() {
     </section>`;
   }
 
-  if (ritual.kind === 'moon') {
-    const task = activeOrSelectedTask();
+  if (ritual.kind === 'region' || ritual.kind === 'task') {
+    const isRegion = ritual.kind === 'region';
+    const task = isRegion ? null : activeOrSelectedTask();
+    const stampLabel = isRegion ? t.lakeArea : taskArea(task);
+    const discovery = isRegion
+      ? `<span class="region-discovery-icons">${icon('paw')}${icon('watering')}</span><strong>${t.nearby}</strong>`
+      : `${icon(task.icon)}<strong>${taskTitle(task)}</strong>`;
     return `<section class="ritual-overlay ritual-arrival is-success" role="status" aria-live="assertive">
       <div class="ritual-stage">
         <div class="arrival-sky" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -477,9 +506,9 @@ function ritualMarkup() {
         </div>
         ${ritualAsset('sun', 'arrival-sun')}
         <div class="arrival-map-ripple" aria-hidden="true"><i></i><i></i><i></i></div>
-        <div class="arrival-stamp"><span>${icon('locate')}</span><strong>${taskArea(task)}</strong></div>
-        <div class="arrival-task">${icon(task.icon)}<strong>${taskTitle(task)}</strong></div>
-        <div class="ritual-result"><strong>${t.arrivalSuccess}</strong><small>${t.taskReady}</small></div>
+        <div class="arrival-stamp"><span>${icon('locate')}</span><strong>${stampLabel}</strong></div>
+        <div class="arrival-task ${isRegion ? 'arrival-region-tasks' : ''}">${discovery}</div>
+        <div class="ritual-result"><strong>${isRegion ? t.regionSuccess : t.arrivalSuccess}</strong><small>${isRegion ? t.regionReady : t.taskReady}</small></div>
       </div>
     </section>`;
   }
@@ -516,7 +545,8 @@ function render() {
   homeButton.hidden = !state.paired || state.screen === 'home';
   const screens = {
     welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup,
-    map: mapMarkup, 'map-view': mapViewMarkup, task: taskMarkup, detector: detectorMarkup,
+    'region-scan': regionScanMarkup, 'task-scan': taskScanMarkup, 'map-view': mapViewMarkup,
+    task: taskMarkup, detector: detectorMarkup,
     sky: skyMarkup
   };
   root.innerHTML = screens[state.screen]() + ritualMarkup();
@@ -544,7 +574,7 @@ async function performScan(kind) {
 
 root.addEventListener('click', event => {
   const control = event.target.closest('[data-action]');
-  if (!control || control.dataset.action === 'select-task') return;
+  if (!control) return;
   const action = control.dataset.action;
   clearNotice();
   if (action === 'start') {
@@ -554,32 +584,36 @@ root.addEventListener('click', event => {
     return;
   }
   if (action === 'retry-pair') performScan('pair');
-  if (action === 'moon') performScan('moon');
+  if (action === 'scan-region') performScan('region');
+  if (action === 'scan-task') performScan('task');
   if (action === 'star') performScan('star');
-  if (action === 'detector') {
+  if (action === 'unlock-region') state = beginRegionScan(state);
+  if (action === 'nearby-task') {
     stopDetector();
-    state = openDetector(state);
+    state = openNearbyTask(state, control.dataset.taskId);
     render();
-    startDetector();
+    if (state.screen === 'detector') startDetector();
+    return;
+  }
+  if (action === 'detector-next') {
+    stopDetector();
+    state = completeDetector(state);
+    render();
     return;
   }
   if (action === 'simulate-pair') performSimulatedScan('pair');
   if (action === 'confirm-pair') state = confirmPair(state);
-  if (action === 'nearby-task') state = openNearbyTask(state, control.dataset.taskId);
-  if (action === 'simulate-moon') performSimulatedScan('moon');
+  if (action === 'simulate-region') performSimulatedScan('region');
+  if (action === 'simulate-task') performSimulatedScan('task');
   if (action === 'simulate-star') performSimulatedScan('star');
-  if (action === 'view-map') state = openMapBackup(state);
-  if (action === 'sky') state = showSky(state);
-  if (action === 'home') state = goHome(state);
-  if (action === 'reset') { stopRitual(); state = createInitialState(); }
+  if (action === 'view-map') { stopDetector(); state = openMapBackup(state); }
+  if (action === 'sky') { stopDetector(); state = showSky(state); }
+  if (action === 'home') { stopDetector(); state = goHome(state); }
+  if (action === 'reset') { stopRitual(); stopDetector(); state = createInitialState(); }
   render();
 });
 
 root.addEventListener('change', event => {
-  if (event.target.dataset.action === 'select-task') {
-    state = selectDemoTask(state, event.target.value);
-    render();
-  }
   if (event.target.dataset.action === 'test-heading') {
     manualHeading = Number(event.target.value);
     detectorListening = true;
@@ -609,7 +643,10 @@ appTitle.addEventListener('pointerdown', () => {
   }, 1200);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => appTitle.addEventListener(type, () => clearTimeout(devPressTimer)));
-window.addEventListener('pagehide', stopRitual);
+window.addEventListener('pagehide', () => {
+  stopRitual();
+  stopDetector();
+});
 
 if (!canScanNfc()) showNotice(words().unavailable);
 render();
