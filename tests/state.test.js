@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   activateMoon,
   completeWithStar,
-  confirmStarKeeperFound,
   confirmPair,
   createInitialState,
   pairWithMoon,
@@ -52,11 +51,10 @@ test('a Moon scan activates the selected task', () => {
   assert.equal(state.screen, 'task');
 });
 
-test('an active task can enter and leave the Star detector', () => {
+test('an active task can enter the Star detector', () => {
   const paired = confirmPair(pairWithMoon(createInitialState(), { name: 'Aki', callName: 'Aki', likes: 'dogs' }));
   const detector = openDetector(activateMoon(paired));
   assert.equal(detector.screen, 'detector');
-  assert.equal(confirmStarKeeperFound(detector).screen, 'task');
 });
 
 test('a paired team returns to the home screen and can open the map', () => {
@@ -108,7 +106,7 @@ test('a Star scan completes the active task exactly once', () => {
   const complete = completeWithStar(active);
   assert.deepEqual(complete.completedTaskIds, ['dog']);
   assert.equal(complete.score, 10);
-  assert.equal(complete.screen, 'complete');
+  assert.equal(complete.screen, 'home');
   assert.deepEqual(completeWithStar(complete), complete);
 });
 

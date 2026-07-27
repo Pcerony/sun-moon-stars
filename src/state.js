@@ -46,10 +46,6 @@ export function openDetector(state) {
   return state.activeTaskId ? { ...state, screen: 'detector' } : state;
 }
 
-export function confirmStarKeeperFound(state) {
-  return state.activeTaskId ? { ...state, screen: 'task' } : state;
-}
-
 export function pairWithMoon(state, moonProfile) {
   return { ...state, moonProfile, screen: 'introduction' };
 }
@@ -100,14 +96,10 @@ export function completeWithStar(state) {
     activeTaskId: null,
     completedTaskIds: [...state.completedTaskIds, task.id],
     score: state.score + task.points,
-    screen: 'complete'
+    screen: 'home'
   };
 }
 
 export function showSky(state) {
   return { ...state, screen: 'sky' };
-}
-
-export function continueExploring(state) {
-  return { ...state, screen: 'home' };
 }
