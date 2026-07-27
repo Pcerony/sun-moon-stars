@@ -1,10 +1,16 @@
 import { COMMUNITY_TEAMS, MOCK_OUTDOOR_STATUS, TASKS } from './tasks.js';
 import { icon } from './icons.js';
 import {
-  activateMoon, completeWithStar, confirmPair, confirmStarKeeperFound, continueExploring, createInitialState,
+  activateMoon, completeWithStar, confirmPair, createInitialState,
   goHome, openDetector, openMapBackup, openNearbyTask, pairWithMoon, selectDemoTask, setLanguage,
   showSky, startActivity, toggleDevMode
 } from './state.js';
+import {
+  createReadiness,
+  normalizeAngle,
+  signalStrength,
+  updateReadiness
+} from './detector.js';
 import { canScanNfc, scanTag } from './nfc.js';
 import {
   beginRitual,
@@ -22,14 +28,14 @@ const TEXT = {
     introHint: 'Say your name and one thing you like.', met: 'Ready',
     nearby: 'Nearby', lakeArea: 'Lakeside', updated: 'updated', temp: 'temperature', steps: 'steps', points: 'points',
     paperMap: "Moon's paper map", followMoon: 'Follow the Moon', mapHint: 'Find this place together.',
-    scanToStart: 'Scan Moon', currentStar: 'Star task', detector: 'Detector', scanStar: 'Collect Star',
-    scanStarHint: 'Hold the Star badge near the phone.', detectorStart: 'Listen', detectorFound: 'Found',
+    scanToStart: 'Scan Moon', currentStar: 'Star task', detector: 'Find Star', scanStar: 'Scan Star',
+    scanStarHint: 'Hold the Star badge near the phone.',
     signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!',
-    collected: 'Star collected', sky: 'Our sky', continue: 'Continue', parkMap: 'Backup map',
+    sky: 'Our sky', parkMap: 'Backup map',
     community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
     demoLocation: 'Task', testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
     scanningStar: 'Listening for a Star…', pairSuccess: 'Partners!', together: 'Let’s go together',
-    starSuccess: 'Star collected!', intoSky: 'Added to our sky'
+    arrivalSuccess: 'We are here!', taskReady: 'Task found', starSuccess: 'Star collected!', intoSky: 'Added to our sky'
   },
   zh: {
     activity: '大濠公园', title: '太阳与月亮', unavailable: 'NFC 需要使用支持 NFC 的 Android Chrome 手机。',
@@ -39,14 +45,14 @@ const TEXT = {
     introHint: '说出你的名字和一件喜欢的事。', met: '准备好了',
     nearby: '附近任务', lakeArea: '湖畔区', updated: '刚刚更新', temp: '温度', steps: '步数', points: '积分',
     paperMap: '月亮的纸地图', followMoon: '跟着月亮', mapHint: '一起找到这个地方。',
-    scanToStart: '扫描月亮', currentStar: '星星任务', detector: '探测', scanStar: '收集星星',
-    scanStarHint: '把星星勋章贴近手机。', detectorStart: '开始感应', detectorFound: '找到了',
+    scanToStart: '扫描月亮', currentStar: '星星任务', detector: '寻找星星', scanStar: '扫描星星',
+    scanStarHint: '把星星勋章贴近手机。',
     signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！',
-    collected: '收集成功', sky: '我们的星空', continue: '继续探索', parkMap: '备用地图',
+    sky: '我们的星空', parkMap: '备用地图',
     community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
     demoLocation: '任务', testHeading: '测试方向', scanningMoon: '正在感应月亮…',
     scanningStar: '正在感应星星…', pairSuccess: '伙伴配对成功', together: '一起出发吧',
-    starSuccess: '共同收藏成功', intoSky: '已放入我们的星空'
+    arrivalSuccess: '我们到了！', taskReady: '发现任务', starSuccess: '共同收藏成功', intoSky: '已放入我们的星空'
   }
 };
 
@@ -58,6 +64,8 @@ let detectorStartHeading = null;
 let detectorListening = false;
 let manualHeading = null;
 let lastPulse = 0;
+let detectorReadiness = createReadiness();
+let detectorReadyTimer = null;
 let orientationListening = false;
 let audioContext = null;
 let renderedScreen = null;
@@ -75,7 +83,6 @@ let devPressTimer;
 function words() { return TEXT[state.language]; }
 function taskTitle(task) { return state.language === 'zh' ? task.titleZh : task.title; }
 function taskInstruction(task) { return state.language === 'zh' ? task.instructionZh : task.instruction; }
-function starName(task) { return state.language === 'zh' ? task.starZh : task.star; }
 function taskArea(task) { return state.language === 'zh' ? task.areaZh : task.area; }
 function showNotice(message) { notice.textContent = message; notice.hidden = false; }
 function clearNotice() { notice.hidden = true; notice.textContent = ''; }
@@ -87,6 +94,9 @@ function logoMarkup(className = '') {
 function ritualAsset(name, className = '') {
   return `<img class="ritual-asset ${className}" src="./assets/ritual/${name}.png" alt="">`;
 }
+function roleAsset(name, className = '') {
+  return `<img class="role-asset ${className}" src="./assets/ritual/${name}.png" alt="">`;
+}
 function taskOptions() {
   return Object.values(TASKS).map(task => `<option value="${task.id}" ${task.id === state.selectedTaskId ? 'selected' : ''}>${taskTitle(task)}</option>`).join('');
 }
@@ -95,18 +105,14 @@ function dockMarkup(active) {
   const t = words();
   return `<nav class="bottom-dock" aria-label="${t.title}">
     <button class="dock-button dock-home ${active === 'home' ? 'active' : ''}" data-action="home" aria-label="${t.nearby}" title="${t.nearby}">${logoMarkup('dock-logo')}</button>
-    <button class="dock-button ${active === 'sky' ? 'active' : ''}" data-action="sky" aria-label="${t.sky}" title="${t.sky}">${icon('star')}</button>
+    <button class="dock-button dock-sky ${active === 'sky' ? 'active' : ''}" data-action="sky" aria-label="${t.sky}" title="${t.sky}">${roleAsset('star', 'dock-star')}</button>
     <button class="dock-button ${active === 'map' ? 'active' : ''}" data-action="view-map" aria-label="${t.parkMap}" title="${t.parkMap}">${icon('map')}</button>
   </nav>`;
 }
 
-function normalizeAngle(angle) { return ((angle % 360) + 360) % 360; }
-function angleDistance(a, b) { return Math.abs(((a - b + 540) % 360) - 180); }
-function signalStrength() {
+function currentSignalStrength() {
   const heading = manualHeading ?? detectorHeading;
-  if (heading === null || detectorStartHeading === null) return 0.08;
-  const relativeHeading = normalizeAngle(heading - detectorStartHeading);
-  return Math.max(0.08, 1 - angleDistance(relativeHeading, 75) / 145);
+  return signalStrength(heading, detectorStartHeading);
 }
 function signalMessage(strength) {
   const t = words();
@@ -122,6 +128,29 @@ function pulse(strength) {
   if (navigator.vibrate) navigator.vibrate(Math.round(25 + strength * 85));
   playSignalTone(strength);
   lastPulse = now;
+}
+function clearDetectorReadyTimer() {
+  window.clearTimeout(detectorReadyTimer);
+  detectorReadyTimer = null;
+}
+function updateDetectorSignal(now = Date.now()) {
+  const strength = currentSignalStrength();
+  const wasReady = detectorReadiness.ready;
+  detectorReadiness = updateReadiness(detectorReadiness, strength, now);
+  if (detectorReadiness.nearSince !== null && !detectorReadiness.ready && detectorReadyTimer === null) {
+    const delay = Math.max(0, detectorReadiness.nearSince + 710 - now);
+    detectorReadyTimer = window.setTimeout(() => {
+      detectorReadyTimer = null;
+      updateDetectorSignal();
+      render();
+    }, delay);
+  }
+  if (detectorReadiness.nearSince === null) clearDetectorReadyTimer();
+  if (!wasReady && detectorReadiness.ready) {
+    if (navigator.vibrate) navigator.vibrate([45, 45, 75]);
+    playTone(840, 0, 0.2);
+  }
+  pulse(strength);
 }
 function prepareAudio() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -182,7 +211,10 @@ function stopRitual() {
 function applySuccessfulScan(kind) {
   if (kind === 'pair') state = pairWithMoon(state, DEMO_MOON);
   if (kind === 'moon') state = activateMoon(state);
-  if (kind === 'star') state = completeWithStar(state);
+  if (kind === 'star') {
+    stopDetector();
+    state = completeWithStar(state);
+  }
 }
 
 function showSuccessfulRitual(kind) {
@@ -213,12 +245,15 @@ function stopDetector() {
   manualHeading = null;
   detectorHeading = null;
   detectorStartHeading = null;
+  detectorReadiness = createReadiness();
+  clearDetectorReadyTimer();
   lastPulse = 0;
   if (navigator.vibrate) navigator.vibrate(0);
 }
 async function startDetector() {
   detectorListening = true;
   manualHeading = null;
+  detectorReadiness = createReadiness();
   prepareAudio();
   try {
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -233,11 +268,12 @@ async function startDetector() {
         if (!Number.isFinite(heading)) return;
         detectorHeading = heading;
         if (detectorStartHeading === null) detectorStartHeading = heading;
-        pulse(signalStrength());
+        updateDetectorSignal();
         render();
       }, { passive: true });
     }
   } catch (error) {
+    detectorListening = false;
     showNotice(error.message);
   }
   render();
@@ -258,8 +294,8 @@ function pairingMarkup() {
   const t = words();
   return `<section class="screen"><div class="content">
     <p class="eyebrow">${t.pairing}</p><h2>${t.scanMoon}</h2>
-    <div class="nfc-orbit">${icon('nfc')}</div>
-    <button class="primary-button" data-action="pair-moon">${icon('nfc')}${t.scanMoon}</button>
+    <div class="nfc-orbit">${roleAsset('moon', 'pairing-moon')}<span>${icon('nfc')}</span></div>
+    <button class="primary-button" data-action="retry-pair">${icon('nfc')}${t.scanMoon}</button>
     ${devOnly(`<button class="secondary-button" data-action="simulate-pair">${icon('nfc')}${t.demoScan}</button>`)}
   </div></section>`;
 }
@@ -287,13 +323,13 @@ function homeMarkup() {
   }).join('');
   return `<section class="home-screen">
     <section class="info-zone">
-      <div class="area-line">${icon('locate')}<span>${t.activity}</span></div>
+      <div class="area-line">${roleAsset('sun', 'home-sun')}<span>${t.activity}</span></div>
       <h2 class="area-title">${t.lakeArea}</h2>
       <span class="update-pill">${icon('check')} ${t.updated} · ${MOCK_OUTDOOR_STATUS.updatedAt}</span>
       <div class="status-row">
         <div class="status-blob">${icon('thermometer')}<span><strong>${MOCK_OUTDOOR_STATUS.temperatureCelsius}°</strong><small>${t.temp}</small></span></div>
         <div class="status-blob">${icon('footprints')}<span><strong>${MOCK_OUTDOOR_STATUS.steps}</strong><small>${t.steps}</small></span></div>
-        <div class="status-blob">${icon('star')}<span><strong>${state.score}</strong><small>${t.points}</small></span></div>
+        <div class="status-blob">${roleAsset('star', 'status-star')}<span><strong>${state.score}</strong><small>${t.points}</small></span></div>
       </div>
     </section>
     <section class="interaction-zone">
@@ -310,7 +346,7 @@ function mapMarkup() {
   return `<section class="screen"><div class="content">
     <p class="eyebrow">${t.paperMap}</p><h2>${t.followMoon}</h2>
     <div class="paper-prompt">
-      ${icon('map')}
+      <div class="map-role">${roleAsset('moon', 'map-moon')}${icon('map')}</div>
       <span class="task-chip">${icon(task.icon)}${taskArea(task)}</span>
       <p>${t.mapHint}</p>
     </div>
@@ -332,62 +368,43 @@ function taskMarkup() {
   const task = activeOrSelectedTask();
   return `<section class="screen task-screen"><div class="content">
     <p class="eyebrow">${t.currentStar}</p>
-    <div class="task-heading"><h2>${taskTitle(task)}</h2><span class="points-badge">${icon('star')}+${task.points}</span></div>
+    <div class="task-heading"><h2>${taskTitle(task)}</h2><span class="points-badge">${roleAsset('star', 'points-star')}+${task.points}</span></div>
     <div class="image-sticker task-image"><img src="${task.illustration}" alt=""></div>
     <p>${taskInstruction(task)}</p>
-    <div class="task-actions">
-      <button class="icon-action" data-action="detector">${icon('detector')}<span>${t.detector}</span></button>
-      <button class="icon-action" data-action="star">${icon('nfc')}<span>${t.scanStar}</span></button>
-    </div>
-    ${devOnly(`<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>`)}
+    <button class="primary-button detector-entry" data-action="detector">${icon('detector')}<span>${t.detector}</span></button>
   </div>${dockMarkup('')}</section>`;
 }
 
 function detectorMarkup() {
   const t = words();
-  const strength = signalStrength();
-  const rotation = manualHeading ?? detectorHeading ?? 0;
+  const strength = currentSignalStrength();
+  const heading = manualHeading ?? detectorHeading;
+  const rotation = detectorStartHeading === null || heading === null
+    ? 75
+    : normalizeAngle(75 - normalizeAngle(heading - detectorStartHeading));
   const task = activeOrSelectedTask();
   return `<section class="screen detector-screen"><div class="content">
     <p class="eyebrow">${t.detector}</p><h2>${taskTitle(task)}</h2>
-    <div class="detector" style="--signal:${strength}; --rotation:${rotation}deg">
+    <div class="detector ${detectorReadiness.ready ? 'is-ready' : ''}" style="--signal:${strength}; --target-angle:${rotation}deg; --counter-angle:${-rotation}deg; --star-scale:${0.74 + strength * 0.34}">
       <div class="signal-rings"><i></i><i></i><i></i></div>
-      <div class="compass-arrow">${icon('locate')}</div>
-      <strong>${signalMessage(strength)}</strong>
+      <div class="target-track">${roleAsset('star', 'detector-star')}</div>
+      ${roleAsset('sun', 'detector-sun')}
+      <strong class="detector-status">${signalMessage(strength)}</strong>
     </div>
-    <div class="actions">
-      <button class="primary-button" data-action="start-detector">${icon('detector')}${t.detectorStart}</button>
-      <button class="secondary-button" data-action="found-keeper">${icon('check')}${t.detectorFound}</button>
-    </div>
-    ${devOnly(`<label>${t.testHeading}<input type="range" min="0" max="360" value="${manualHeading ?? 0}" data-action="test-heading"></label>`)}
-  </div>${dockMarkup('')}</section>`;
-}
-
-function completeMarkup() {
-  const t = words();
-  const task = TASKS[state.completedTaskIds.at(-1)];
-  return `<section class="screen completion-screen"><div class="content">
-    <p class="eyebrow">${t.collected}</p>
-    <div class="big-star">${icon('star')}</div>
-    <h2>${starName(task)}</h2>
-    <p class="score-pop">+${task.points}</p>
-    <div class="actions">
-      <button class="primary-button" data-action="sky">${icon('star')}${t.sky}</button>
-      <button class="secondary-button" data-action="continue">${icon('walk')}${t.continue}</button>
-    </div>
+    ${detectorReadiness.ready ? `<button class="primary-button star-scan-button" data-action="star">${icon('nfc')}${t.scanStar}</button>` : ''}
+    ${devOnly(`<label>${t.testHeading}<input type="range" min="0" max="360" value="${manualHeading ?? 0}" data-action="test-heading"></label>${detectorReadiness.ready ? `<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>` : ''}`)}
   </div>${dockMarkup('')}</section>`;
 }
 
 function skyMarkup() {
   const t = words();
-  const collected = state.completedTaskIds.map(() => icon('star', 'collected')).join('');
+  const collected = state.completedTaskIds.map(() => roleAsset('star', 'collected-star')).join('');
   return `<section class="screen sky-screen"><div class="content">
     <p class="eyebrow">${t.sky}</p>
-    <div class="sky-score"><h2>${t.sky}</h2><strong>${state.score}</strong></div>
-    <div class="star-field">${collected}${icon('star')}${icon('star')}${icon('star')}${icon('star')}</div>
+    <div class="sky-score"><h2>${t.sky}</h2><strong>${roleAsset('star', 'sky-score-star')}${state.score}</strong></div>
+    <div class="star-field">${collected}<i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>
     <h3>${t.community}</h3>
-    <div class="community-strip">${COMMUNITY_TEAMS.map(team => `<span>${team.name} · ${team.stars}${icon('star')}</span>`).join('')}</div>
-    <button class="secondary-button" data-action="continue">${icon('walk')}${t.continue}</button>
+    <div class="community-strip">${COMMUNITY_TEAMS.map(team => `<span>${team.name} · ${team.stars}${roleAsset('star', 'community-star')}</span>`).join('')}</div>
     ${devOnly(`<button class="secondary-button" data-action="reset">${icon('reset')}${t.reset}</button>`)}
   </div>${dockMarkup('sky')}</section>`;
 }
@@ -426,6 +443,24 @@ function ritualMarkup() {
     </section>`;
   }
 
+  if (ritual.kind === 'moon') {
+    const task = activeOrSelectedTask();
+    return `<section class="ritual-overlay ritual-arrival is-success" role="status" aria-live="assertive">
+      <div class="ritual-stage">
+        <div class="arrival-sky" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="arrival-beacon">
+          <div class="arrival-beacon-rings" aria-hidden="true"><i></i><i></i></div>
+          ${ritualAsset('moon', 'arrival-moon')}
+        </div>
+        ${ritualAsset('sun', 'arrival-sun')}
+        <div class="arrival-map-ripple" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="arrival-stamp"><span>${icon('locate')}</span><strong>${taskArea(task)}</strong></div>
+        <div class="arrival-task">${icon(task.icon)}<strong>${taskTitle(task)}</strong></div>
+        <div class="ritual-result"><strong>${t.arrivalSuccess}</strong><small>${t.taskReady}</small></div>
+      </div>
+    </section>`;
+  }
+
   return `<section class="ritual-overlay ritual-pair is-success" role="status" aria-live="assertive">
     <div class="ritual-stage">
       <div class="ritual-waves" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -459,7 +494,7 @@ function render() {
   const screens = {
     welcome: welcomeMarkup, pairing: pairingMarkup, introduction: introductionMarkup, home: homeMarkup,
     map: mapMarkup, 'map-view': mapViewMarkup, task: taskMarkup, detector: detectorMarkup,
-    complete: completeMarkup, sky: skyMarkup
+    sky: skyMarkup
   };
   root.innerHTML = screens[state.screen]() + ritualMarkup();
   if (screenChanged) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
@@ -489,13 +524,22 @@ root.addEventListener('click', event => {
   if (!control || control.dataset.action === 'select-task') return;
   const action = control.dataset.action;
   clearNotice();
-  if (action === 'start') state = startActivity(state);
-  if (action === 'pair-moon') performScan('pair');
+  if (action === 'start') {
+    state = startActivity(state);
+    render();
+    performScan('pair');
+    return;
+  }
+  if (action === 'retry-pair') performScan('pair');
   if (action === 'moon') performScan('moon');
   if (action === 'star') performScan('star');
-  if (action === 'detector') { stopDetector(); state = openDetector(state); }
-  if (action === 'start-detector') startDetector();
-  if (action === 'found-keeper') { stopDetector(); state = confirmStarKeeperFound(state); }
+  if (action === 'detector') {
+    stopDetector();
+    state = openDetector(state);
+    render();
+    startDetector();
+    return;
+  }
   if (action === 'simulate-pair') performSimulatedScan('pair');
   if (action === 'confirm-pair') state = confirmPair(state);
   if (action === 'nearby-task') state = openNearbyTask(state, control.dataset.taskId);
@@ -503,7 +547,7 @@ root.addEventListener('click', event => {
   if (action === 'simulate-star') performSimulatedScan('star');
   if (action === 'view-map') state = openMapBackup(state);
   if (action === 'sky') state = showSky(state);
-  if (action === 'home' || action === 'continue') state = action === 'home' ? goHome(state) : continueExploring(state);
+  if (action === 'home') state = goHome(state);
   if (action === 'reset') { stopRitual(); state = createInitialState(); }
   render();
 });
@@ -517,7 +561,7 @@ root.addEventListener('change', event => {
     manualHeading = Number(event.target.value);
     detectorListening = true;
     detectorStartHeading = 0;
-    pulse(signalStrength());
+    updateDetectorSignal();
     render();
   }
 });

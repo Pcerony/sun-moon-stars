@@ -9,9 +9,9 @@ The app is a dependency-free static site. It runs from `index.html` and ES modul
 `src/state.js` owns the activity workflow:
 
 ```text
-welcome -> pairing -> introduction -> home -> map -> task -> detector -> task -> complete -> home
-                                      |                         |
-                                      +-------- map backup -----+
+welcome -> pairing scan -> introduction -> home -> map -> task -> detector -> home
+                                            |
+                                            +-------- map backup
 ```
 
 The home screen and header home button let a paired team leave any feature page without losing their accumulated score or collected Stars.
@@ -20,7 +20,9 @@ The home screen and header home button let a paired team leave any feature page 
 
 `src/nfc.js` isolates the Web NFC API. NFC scans begin from explicit user actions and fall back to hidden simulation controls for development. The app must be served over HTTPS for Web NFC on Android Chrome.
 
-The detector in `src/app.js` uses device orientation when available. It produces a compass-like signal, a short vibration, and a generated Web Audio tone. It is not a real geospatial guidance system yet.
+The detector's pure heading and sustained-readiness calculations live in `src/detector.js`. `src/app.js` owns the transient sensor listener, vibration, generated Web Audio tone, and rendering. Entering the detector starts sensing immediately; a Star NFC action appears only after a near signal is sustained. It is not a real geospatial guidance system.
+
+`src/ritual.js` distinguishes three NFC results: first partner pairing, arrival at a task area, and shared Star collection. Workflow state changes only after the matching success ritual finishes. Star completion returns directly to Home.
 
 ## Content
 
@@ -28,4 +30,4 @@ The detector in `src/app.js` uses device orientation when available. It produces
 
 ## Testing
 
-Node's built-in test runner checks pure transitions and NFC capability detection. Browser checks cover rendering and the simulated activity flow. Physical NFC and device orientation need manual Android testing.
+Node's built-in test runner checks pure transitions, detector readiness, ritual phases, and NFC capability detection. Browser checks cover rendering and the simulated activity flow. Physical NFC and device orientation need manual Android testing.
