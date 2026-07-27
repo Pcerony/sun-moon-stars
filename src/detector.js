@@ -25,3 +25,7 @@ export function updateReadiness(readiness, strength, now, threshold = 0.88, hold
     ready: now - nearSince >= holdMs
   };
 }
+
+export function shouldUpdateDetector({ listening, screen, scanning, ritualActive }) {
+  return listening && screen === 'detector' && !scanning && !ritualActive;
+}

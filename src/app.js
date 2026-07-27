@@ -8,6 +8,7 @@ import {
 import {
   createReadiness,
   normalizeAngle,
+  shouldUpdateDetector,
   signalStrength,
   updateReadiness
 } from './detector.js';
@@ -275,7 +276,12 @@ async function startDetector() {
     if (!orientationListening) {
       orientationListening = true;
       window.addEventListener('deviceorientation', event => {
-        if (!detectorListening || state.screen !== 'detector') return;
+        if (!shouldUpdateDetector({
+          listening: detectorListening,
+          screen: state.screen,
+          scanning,
+          ritualActive: Boolean(ritual)
+        })) return;
         const heading = Number.isFinite(event.webkitCompassHeading) ? event.webkitCompassHeading : event.alpha;
         if (!Number.isFinite(heading)) return;
         detectorHeading = heading;
