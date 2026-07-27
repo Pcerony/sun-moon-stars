@@ -63,6 +63,23 @@ export function openMap(state) {
   return state.paired ? { ...state, screen: 'map' } : state;
 }
 
+export function openNearbyTask(state, taskId) {
+  if (
+    !state.paired ||
+    !TASKS[taskId] ||
+    state.activeTaskId ||
+    state.completedTaskIds.includes(taskId)
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    selectedTaskId: taskId,
+    screen: 'map'
+  };
+}
+
 export function openMapBackup(state) {
   return state.paired ? { ...state, screen: 'map-view' } : state;
 }

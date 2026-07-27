@@ -11,6 +11,7 @@ import {
   openMap,
   openMapBackup,
   goHome,
+  openNearbyTask,
   selectDemoTask,
   setLanguage,
   toggleDevMode
@@ -64,6 +65,30 @@ test('a paired team returns to the home screen and can open the map', () => {
   assert.equal(openMap(paired).screen, 'map');
   assert.equal(openMapBackup(paired).screen, 'map-view');
   assert.equal(goHome(openMap(paired)).screen, 'home');
+});
+
+test('a nearby task opens its paper-map prompt', () => {
+  const paired = confirmPair(pairWithMoon(createInitialState(), {
+    name: 'Aki',
+    callName: 'Aki',
+    likes: 'gardening'
+  }));
+
+  const next = openNearbyTask(paired, 'flowers');
+
+  assert.equal(next.selectedTaskId, 'flowers');
+  assert.equal(next.screen, 'map');
+});
+
+test('a completed nearby task cannot be reopened', () => {
+  const paired = confirmPair(pairWithMoon(createInitialState(), {
+    name: 'Aki',
+    callName: 'Aki',
+    likes: 'dogs'
+  }));
+  const complete = completeWithStar(activateMoon(paired));
+
+  assert.deepEqual(openNearbyTask(complete, 'dog'), complete);
 });
 
 test('a Star scan completes the active task exactly once', () => {
