@@ -240,6 +240,30 @@ h3 { font-size: 19px; line-height: 1.2; }
 .primary-button:active,
 .secondary-button:active,
 .sticker-button:active { transform: translateY(2px); box-shadow: none; }
+.subtle-demo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px auto 0;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal-dark, #2b6c73);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px dashed var(--teal-dark, #2b6c73);
+  border-radius: 20px;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.subtle-demo-button:active {
+  opacity: 1;
+  transform: scale(0.96);
+}
+.subtle-demo-button .icon {
+  font-size: 15px;
+}
 .actions { display: flex; flex-wrap: wrap; gap: 11px; justify-content: center; }
 
 .welcome-screen .content { align-content: center; min-height: calc(100dvh - 180px); text-align: center; }

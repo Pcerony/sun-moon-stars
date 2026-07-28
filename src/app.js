@@ -36,7 +36,7 @@ const TEXT = {
     signalNone: 'Listening…', signalFaint: 'Faint', signalNear: 'Nearby', signalFound: 'Here!', signalReady: 'Ready',
     sensorFallback: 'Compass unavailable. Continue to the next step.',
     sky: 'Our sky', parkMap: 'Backup map',
-    community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan',
+    community: 'Today', reset: 'Reset', demoTools: 'Test controls', demoScan: 'Simulate scan', demoTouch: 'Demo Touch',
     testHeading: 'Heading', scanningMoon: 'Listening for Moon…',
     scanningStar: 'Listening for a Star…', pairSuccess: 'Partners!', together: 'Let’s go together',
     regionSuccess: 'Tasks discovered!', regionReady: 'Back to the area',
@@ -56,7 +56,7 @@ const TEXT = {
     signalNone: '正在聆听…', signalFaint: '微弱', signalNear: '就在附近', signalFound: '就在这里！', signalReady: '可以扫描',
     sensorFallback: '方向感应不可用，请直接进入下一步。',
     sky: '我们的星空', parkMap: '备用地图',
-    community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描',
+    community: '今日星光', reset: '重置', demoTools: '测试控制', demoScan: '模拟扫描', demoTouch: '演示触控',
     testHeading: '测试方向', scanningMoon: '正在感应月亮…',
     scanningStar: '正在感应星星…', pairSuccess: '伙伴配对成功', together: '一起出发吧',
     regionSuccess: '发现新任务！', regionReady: '回到当前区域',
@@ -106,6 +106,10 @@ function regionPickerMarkup() {
   return `<div class="region-picker" role="list" aria-label="区域选择">${Object.values(REGIONS).map(region => `<button type="button" class="region-picker-button ${region.id === state.currentRegionId ? 'active' : ''}" data-action="change-region" data-region-id="${region.id}" role="listitem">${regionName(region)}</button>`).join('')}</div>`;
 }
 function devOnly(markup) { return state.devMode ? `<details class="demo-panel" open><summary>${words().demoTools}</summary>${markup}</details>` : ''; }
+function subtleDemoButton(kind) {
+  if (canScanNfc()) return '';
+  return `<button class="subtle-demo-button" data-action="simulate-${kind}">${icon('sparkle')}<span>${words().demoTouch}</span></button>`;
+}
 function logoMarkup(className = '') {
   return `<img class="brand-logo ${className}" src="./assets/branding/logo.png" alt="">`;
 }
@@ -270,10 +274,18 @@ function showSuccessfulRitual(kind) {
   }, ritual.duration);
 }
 
-function performSimulatedScan(kind) {
+function performSimulatedScan(kind, scanDelayMs = 1200) {
   if (scanning || ritual) return;
+  const token = ++ritualToken;
+  scanning = true;
   prepareAudio();
-  showSuccessfulRitual(kind);
+  clearNotice();
+  ritual = beginRitual(kind);
+  render();
+  ritualTimer = window.setTimeout(() => {
+    if (token !== ritualToken) return;
+    showSuccessfulRitual(kind);
+  }, scanDelayMs);
 }
 function stopDetector() {
   detectorListening = false;
@@ -343,6 +355,7 @@ function pairingMarkup() {
     <p class="eyebrow">${t.pairing}</p><h2>${t.scanMoon}</h2>
     <div class="nfc-orbit">${roleAsset('moon', 'pairing-moon')}<span>${icon('nfc')}</span></div>
     <button class="primary-button" data-action="retry-pair">${icon('nfc')}${t.scanMoon}</button>
+    ${subtleDemoButton('pair')}
     ${devOnly(`<button class="secondary-button" data-action="simulate-pair">${icon('nfc')}${t.demoScan}</button>`)}
   </div></section>`;
 }
@@ -408,6 +421,7 @@ function regionScanMarkup() {
       <span class="scan-link">${icon('nfc')}</span>
     </div>
     <button class="primary-button" data-action="scan-region">${icon('nfc')}${t.scanMoon}</button>
+    ${subtleDemoButton('region')}
     ${devOnly(`<button class="secondary-button" data-action="simulate-region">${icon('nfc')}${t.demoScan}</button>`)}
   </div>${dockMarkup('')}</section>`;
 }
@@ -429,6 +443,7 @@ function taskMarkup() {
     <div class="image-sticker task-image"><img src="${task.illustration}" alt=""></div>
     <p>${taskInstruction(task)}</p>
     <button class="primary-button star-collect-button" data-action="star">${roleAsset('star', 'button-star')}<span>${t.scanStar}</span></button>
+    ${subtleDemoButton('star')}
     ${devOnly(`<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>`)}
   </div>${dockMarkup('')}</section>`;
 }
@@ -444,6 +459,7 @@ function eggScanMarkup() {
     </div>
     <p class="egg-hint">${t.eggHint}</p>
     <button class="primary-button star-collect-button" data-action="star">${roleAsset('star', 'button-star')}<span>${t.scanStar}</span></button>
+    ${subtleDemoButton('star')}
     ${devOnly(`<button class="secondary-button" data-action="simulate-star">${icon('nfc')}${t.demoScan}</button>`)}
   </div>${dockMarkup('')}</section>`;
 }
@@ -460,6 +476,7 @@ function taskScanMarkup() {
       <span class="task-chip task-icon-only" aria-label="${t.taskScan}">${icon(task.icon)}</span>
     </div>
     <button class="primary-button" data-action="scan-task">${icon('nfc')}${t.scanMoon}</button>
+    ${subtleDemoButton('task')}
     ${devOnly(`<button class="secondary-button" data-action="simulate-task">${icon('nfc')}${t.demoScan}</button>`)}
   </div>${dockMarkup('')}</section>`;
 }
@@ -613,6 +630,10 @@ function render({ preserveRitualOverlay = false } = {}) {
 
 async function performScan(kind) {
   if (scanning || ritual) return;
+  if (!canScanNfc()) {
+    performSimulatedScan(kind);
+    return;
+  }
   scanning = true;
   prepareAudio();
   clearNotice();
