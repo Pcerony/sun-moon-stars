@@ -64,7 +64,21 @@ const TEXT = {
   }
 };
 
-const DEMO_MOON = { name: 'Haruko Sato', callName: 'Haruko', likes: 'flowers and small dogs' };
+const DEMO_MOON = {
+  name: 'Haruko Sato',
+  callName: 'Haruko',
+  likes: 'plants and drawing',
+  likesZh: '植物与绘画',
+  condition: 'Early-stage MCI',
+  conditionZh: '认知症前期患者',
+  hometown: 'China',
+  hometownZh: '出生地中国',
+  age: 40,
+  ageZh: '年龄40',
+  occupation: 'Former Designer',
+  occupationZh: '曾经的职业是设计师'
+};
+
 let state = createInitialState();
 let scanning = false;
 let detectorHeading = null;
@@ -363,11 +377,18 @@ function pairingMarkup() {
 function introductionMarkup() {
   const t = words();
   const profile = state.moonProfile;
+  const isZh = state.language === 'zh';
   return `<section class="screen"><div class="content">
     <p class="eyebrow">${t.profile}</p>
     <div class="image-sticker profile-image"><img src="./assets/illustrations/moon-profile.png" alt=""></div>
     <div class="profile-name"><h2>${profile.callName}</h2><span class="task-chip">${icon('pair')}${t.callName}</span></div>
-    <div class="mini-facts"><span class="mini-fact">${icon('flower')}${state.language === 'zh' ? '花朵和小狗' : profile.likes}</span></div>
+    <div class="mini-facts">
+      <span class="mini-fact">${icon('flower')}${isZh ? (profile.likesZh || '植物与绘画') : profile.likes}</span>
+      <span class="mini-fact">${icon('brain')}${isZh ? (profile.conditionZh || '认知症前期患者') : profile.condition}</span>
+      <span class="mini-fact">${icon('pin')}${isZh ? (profile.hometownZh || '出生地中国') : profile.hometown}</span>
+      <span class="mini-fact">${icon('user')}${isZh ? (profile.ageZh || '年龄40') : `Age ${profile.age}`}</span>
+      <span class="mini-fact">${icon('palette')}${isZh ? (profile.occupationZh || '曾经的职业是设计师') : profile.occupation}</span>
+    </div>
     <div class="speech-strip">${icon('pair')}<span><strong>${t.introduce}</strong><br><small>${t.introHint}</small></span></div>
     <button class="primary-button" data-action="confirm-pair">${icon('check')}${t.met}</button>
   </div></section>`;

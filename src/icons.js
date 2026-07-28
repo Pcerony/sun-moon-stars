@@ -1,6 +1,7 @@
 const ICONS = {
   arrow: 'ph-caret-right',
   back: 'ph-arrow-left',
+  brain: 'ph-brain',
   check: 'ph-check',
   detector: 'ph-compass',
   dog: 'ph-dog',
@@ -15,12 +16,15 @@ const ICONS = {
   music: 'ph-music-note',
   nfc: 'ph-contactless-payment',
   pair: 'ph-users',
+  palette: 'ph-palette',
   paw: 'ph-paw-print',
+  pin: 'ph-map-pin',
   reset: 'ph-arrow-counter-clockwise',
   sparkle: 'ph-sparkle',
   star: 'ph-star',
   thermometer: 'ph-thermometer-simple',
   tree: 'ph-tree',
+  user: 'ph-user',
   walk: 'ph-person-simple-walk',
   watering: 'ph-drop'
 };
