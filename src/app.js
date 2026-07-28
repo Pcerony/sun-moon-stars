@@ -65,8 +65,8 @@ const TEXT = {
 };
 
 const DEMO_MOON = {
-  name: 'Haruko Sato',
-  callName: 'Haruko',
+  name: 'Mingfei',
+  callName: 'Mingfei',
   likes: 'plants and drawing',
   likesZh: '植物与绘画',
   condition: 'Early-stage MCI',
@@ -380,7 +380,7 @@ function introductionMarkup() {
   const isZh = state.language === 'zh';
   return `<section class="screen"><div class="content">
     <p class="eyebrow">${t.profile}</p>
-    <div class="image-sticker profile-image"><img src="./assets/illustrations/moon-profile.png" alt=""></div>
+    <div class="image-sticker profile-image"><img src="./assets/illustrations/moon-profile.jpg" alt=""></div>
     <div class="profile-name"><h2>${profile.callName}</h2><span class="task-chip">${icon('pair')}${t.callName}</span></div>
     <div class="mini-facts">
       <span class="mini-fact">${icon('flower')}${isZh ? (profile.likesZh || '植物与绘画') : profile.likes}</span>
